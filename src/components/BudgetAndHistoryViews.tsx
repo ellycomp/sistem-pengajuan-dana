@@ -121,7 +121,7 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
             const result = onAddBudgetLine({ name: newBudgetName.trim(), code: newBudgetCode.trim().toUpperCase(), unit: newBudgetUnit.trim(), annualLimit: limit });
             if (!result.ok) { setFormError(result.error || 'Gagal menambahkan pos anggaran.'); return; }
             setNewBudgetName(''); setNewBudgetCode(''); setNewBudgetUnit(''); setNewBudgetLimit(''); setFormError(''); setShowAddForm(false);
-          }} className="rounded-[12px]] border border-[#BEC9C6] bg-white p-4 flex flex-col gap-3">
+          }} className="rounded-[12px] border border-[#BEC9C6] bg-white p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between"><h2 className="font-title text-[16px] font-semibold">Tambah Pos Anggaran Baru</h2><button type="button" onClick={() => setShowAddForm(false)} aria-label="Tutup form"><X className="w-4 h-4" /></button></div>
             {formError && <p role="alert" className="rounded-[8px] bg-[#FFDAD6] text-[#410002] px-3 py-2 text-[13px]">{formError}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
