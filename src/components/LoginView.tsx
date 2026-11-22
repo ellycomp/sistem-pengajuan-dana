@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, Info, X } from 'lucide-react';
 import { RoleId, UserAccount } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
+import { supabase } from '../lib/supabase';
 
 interface LoginViewProps {
   accounts: UserAccount[];
@@ -41,24 +42,51 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
       return;
     }
 
-    const matchedByEmail = accounts.find(
-      (acc) => acc.email.toLowerCase() === trimmedEmail
-    );
-
-    if (!matchedByEmail || matchedByEmail.password !== password) {
-      setErrorMsg('Email atau kata sandi tidak sesuai. Silakan periksa kembali.');
-      return;
-    }
-
-    if (matchedByEmail.role !== selectedRole) {
-      setErrorMsg(
-        `Email ini terdaftar sebagai ${matchedByEmail.title}. Silakan pilih peran akses yang sesuai.`
-      );
+    if (!supabase) {
+      setErrorMsg('Koneksi Supabase belum tersedia. Periksa konfigurasi GitHub Actions.');
       return;
     }
 
     setErrorMsg('');
-    onLogin(matchedByEmail, rememberMe);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
+      password,
+    });
+    if (error || !data.user) {
+      setErrorMsg(error?.message || 'Email atau kata sandi tidak sesuai.');
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, name, email, role, title, unit, avatar')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      await supabase.auth.signOut();
+      setErrorMsg('Akun berhasil masuk, tetapi profil belum terdaftar. Hubungi Direktur/pengelola.');
+      return;
+    }
+
+    if (profile.role !== selectedRole) {
+      await supabase.auth.signOut();
+      setErrorMsg('Peran akses yang dipilih tidak sesuai dengan peran akun ini.');
+      return;
+    }
+
+    const authenticatedAccount: UserAccount = {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      role: profile.role,
+      title: profile.title,
+      unit: profile.unit,
+      avatar: profile.avatar || profile.name.slice(0, 2).toUpperCase(),
+      password: '',
+      isDefault: false,
+    };
+    onLogin(authenticatedAccount, rememberMe);
   };
 
   return (
