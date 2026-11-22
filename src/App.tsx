@@ -64,10 +64,23 @@ function loadInitialState(): PersistedState {
         parsed.accounts.length > 0 &&
         parsed.currentAccountId
       ) {
+        const migratedAccounts = [...parsed.accounts];
+        INITIAL_ACCOUNTS.forEach((seedAccount) => {
+          const existingIndex = migratedAccounts.findIndex((account) => account.id === seedAccount.id);
+          if (existingIndex === -1) {
+            migratedAccounts.push(seedAccount);
+          } else if (['acc-sarana', 'acc-bendahara-sekolah'].includes(seedAccount.id)) {
+            migratedAccounts[existingIndex] = {
+              ...migratedAccounts[existingIndex],
+              ...seedAccount,
+              password: migratedAccounts[existingIndex].password,
+            };
+          }
+        });
         return {
           isLoggedIn: Boolean(parsed.isLoggedIn),
           currentAccountId: parsed.currentAccountId,
-          accounts: parsed.accounts,
+          accounts: migratedAccounts,
           requests: parsed.requests.map((r) => ({
             ...r,
             schoolUnit: r.schoolUnit || 'SD IT Qudwah Sungai Rengit',
@@ -150,18 +163,12 @@ export default function App() {
   const handleLogin = (account: UserAccount) => {
     setCurrentAccountId(account.id);
     setIsLoggedIn(true);
-    if (account.role === 'guru') {
-      if (requests.length > 0) {
-        setSelectedRequestId(requests[0].id);
-        setActiveTab('detail');
-      } else {
-        setSelectedRequestId('');
-        setActiveTab('pengajuan');
-      }
-    } else {
+    if (account.role !== 'guru' && account.role !== 'direktur') {
       setSelectedTier(account.role);
-      setActiveTab('persetujuan');
     }
+    // Semua petugas dapat mengajukan dari kapasitas jabatan masing-masing.
+    // Menu Persetujuan tetap tersedia untuk menjalankan tugas pemeriksaan.
+    setActiveTab('pengajuan');
     setToastMessage(`Selamat datang, ${account.name}.`);
   };
 
@@ -443,6 +450,7 @@ export default function App() {
   };
 
   const handleCreateRequest = (payload: {
+    requesterRole: string;
     title: string;
     schoolUnit: SchoolUnit;
     budgetCategoryId: string;
@@ -457,9 +465,18 @@ export default function App() {
     const budget = budgetLines.find((b) => b.id === payload.budgetCategoryId);
 
     const saranaAcc = accounts.find((a) => a.role === 'sarana');
-    const bendSekAcc = accounts.find((a) => a.role === 'bendahara-sekolah');
+    const bendSekAcc = accounts.find((a) => a.role === 'bendahara-sekolah' && a.id !== 'acc-umi-laila-sari');
     const bendUmumAcc = accounts.find((a) => a.role === 'bendahara-umum');
     const direkturAcc = accounts.find((a) => a.role === 'direktur');
+    const umiLailaAcc = accounts.find((a) => a.id === 'acc-umi-laila-sari');
+    const requestByEka = currentUser.name === 'Eka Priyana';
+    const requestByRosyidatul = currentUser.name === 'Rosyidatul Alyah';
+    const stageTwoReviewer = requestByEka
+      ? accounts.find((a) => a.name === 'Rosyidatul Alyah') || saranaAcc
+      : saranaAcc;
+    const stageThreeReviewer = requestByEka || requestByRosyidatul
+      ? umiLailaAcc || bendSekAcc
+      : bendSekAcc;
 
     const newReq: FundRequest = {
       id: `req-${Date.now()}`,
@@ -470,7 +487,7 @@ export default function App() {
       budgetCategoryName: budget?.name || 'Operasional',
       unit: payload.unit,
       requesterName: currentUser.name,
-      requesterRole: currentUser.title,
+      requesterRole: payload.requesterRole,
       submittedDate: shortDate,
       targetDate: payload.targetDate,
       attachmentName: payload.attachmentName,
@@ -494,8 +511,8 @@ export default function App() {
           step: 2,
           roleKey: 'sarana',
           roleLabel: '2. Kepala Seksi Sarana',
-          personName: saranaAcc?.name || 'Pak Ahmad Fauzi',
-          personTitle: saranaAcc?.title || 'Kepala Seksi Sarana',
+          personName: stageTwoReviewer?.name || 'Eka Priyana',
+          personTitle: requestByEka ? 'Pengganti Kepala Seksi Sarana' : (stageTwoReviewer?.title || 'Kepala Seksi Sarana'),
           state: 'active',
           note: 'Sedang memverifikasi stok & kebutuhan unit',
         },
@@ -503,8 +520,8 @@ export default function App() {
           step: 3,
           roleKey: 'bendahara-sekolah',
           roleLabel: '3. Bendahara Sekolah',
-          personName: bendSekAcc?.name || 'Bu Siti Aminah',
-          personTitle: bendSekAcc?.title || 'Bendahara Sekolah',
+          personName: stageThreeReviewer?.name || 'Rosyidatul Alyah',
+          personTitle: (requestByEka || requestByRosyidatul) ? 'Pengganti Bendahara Sekolah' : (stageThreeReviewer?.title || 'Bendahara Sekolah'),
           state: 'pending',
           note: 'Menunggu persetujuan Kasi Sarana',
         },
