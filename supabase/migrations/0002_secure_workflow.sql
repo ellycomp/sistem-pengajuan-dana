@@ -84,13 +84,13 @@ begin
         raise exception 'Tahap pengaju tidak valid.';
       end if;
     elsif (v_stage->>'step')::integer between 2 and 5 then
-      if (v_stage->>'roleKey')::public.app_role <>
-         case (v_stage->>'step')::integer
+      if ( (v_stage->>'roleKey')::public.app_role <>
+         (case (v_stage->>'step')::integer
            when 2 then 'sarana'::public.app_role
            when 3 then 'bendahara-sekolah'::public.app_role
            when 4 then 'bendahara-umum'::public.app_role
            when 5 then 'direktur'::public.app_role
-         end
+         end)
          or not exists (
            select 1 from public.profiles p
            where p.role = (v_stage->>'roleKey')::public.app_role
