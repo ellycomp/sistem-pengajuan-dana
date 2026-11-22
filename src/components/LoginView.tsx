@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, Info, X } from 'lucide-react';
 import { RoleId, UserAccount } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
@@ -20,6 +20,70 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
   const [rememberMe, setRememberMe] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [showForgotHelp, setShowForgotHelp] = useState<boolean>(false);
+  const [resetBusy, setResetBusy] = useState<boolean>(false);
+  const [resetMessage, setResetMessage] = useState<string>('');
+  const [recoveryMode, setRecoveryMode] = useState<boolean>(false);
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState<string>('');
+
+  useEffect(() => {
+    if (!supabase) return;
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecoveryMode(true);
+        setShowForgotHelp(false);
+        setErrorMsg('');
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const sendPasswordReset = async () => {
+    const targetEmail = email.trim().toLowerCase();
+    if (!targetEmail) {
+      setResetMessage('Masukkan email akun terlebih dahulu.');
+      return;
+    }
+    if (!supabase) {
+      setResetMessage('Koneksi Supabase belum tersedia.');
+      return;
+    }
+    setResetBusy(true);
+    setResetMessage('');
+    const result = await supabase.auth.resetPasswordForEmail(targetEmail, {
+      redirectTo: window.location.origin + '/sistem-pengajuan-dana/',
+    });
+    setResetBusy(false);
+    setResetMessage(result.error
+      ? 'Gagal mengirim tautan: ' + result.error.message
+      : 'Tautan pengaturan ulang telah dikirim jika email terdaftar. Periksa kotak masuk dan folder Spam.');
+  };
+
+  const saveNewPassword = async () => {
+    if (newPassword.length < 8) {
+      setResetMessage('Kata sandi baru minimal 8 karakter.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setResetMessage('Konfirmasi kata sandi belum sama.');
+      return;
+    }
+    if (!supabase) return;
+    setResetBusy(true);
+    setResetMessage('');
+    const result = await supabase.auth.updateUser({ password: newPassword });
+    setResetBusy(false);
+    if (result.error) {
+      setResetMessage('Gagal memperbarui kata sandi: ' + result.error.message);
+      return;
+    }
+    await supabase.auth.signOut();
+    setRecoveryMode(false);
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setPassword('');
+    setResetMessage('Kata sandi berhasil diperbarui. Silakan masuk menggunakan kata sandi baru.');
+  };
 
   const handleRoleChange = (role: RoleId) => {
     setSelectedRole(role);
@@ -401,48 +465,33 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
       </main>
 
       {/* Modal Bantuan Lupa Sandi */}
-      {showForgotHelp && (
-        <div
-          className="fixed inset-0 z-50 bg-[#191C1B]/40 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="forgot-pw-title"
-        >
-          <div className="w-full max-w-sm rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-6 flex flex-col gap-4">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2 text-[#00433C]">
-                <Info className="w-5 h-5 shrink-0" aria-hidden="true" />
-                <h3
-                  id="forgot-pw-title"
-                  className="font-title text-[16px] font-semibold text-[#191C1B]"
-                >
-                  Bantuan Akses Akun
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowForgotHelp(false)}
-                aria-label="Tutup bantuan"
-                className="w-8 h-8 inline-flex items-center justify-center rounded-[8px] text-[#3F4947] hover:bg-[#F2F4F2]"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      {(showForgotHelp || recoveryMode) && (
+        <div className="fixed inset-0 z-50 bg-[#191C1B]/40 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-[12px] border border-[#BEC9C6] bg-white p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-title text-[16px] font-semibold text-[#191C1B]">
+                {recoveryMode ? 'Buat Kata Sandi Baru' : 'Atur Ulang Kata Sandi'}
+              </h3>
+              {!recoveryMode && (
+                <button type="button" onClick={() => { setShowForgotHelp(false); setResetMessage(''); }} aria-label="Tutup" className="w-8 h-8 rounded-[8px]">×</button>
+              )}
             </div>
-            <p className="font-body text-[14px] leading-[20px] text-[#3F4947]">
-              Pembuatan akun dan pengaturan ulang kata sandi portal SIT Qudwah
-              Sungai Rengit dikelola langsung oleh Direktur SIT Qudwah. Silakan
-              hubungi Direktur untuk mendapatkan akses akun baru.
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowForgotHelp(false)}
-              className="w-full rounded-[8px] bg-[#00433C] text-[#FFFFFF] px-4 py-2 font-label text-[14px] font-semibold hover:bg-[#0F5C53]"
-            >
-              Mengerti
-            </button>
+            {recoveryMode ? (
+              <>
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Kata sandi baru (minimal 8 karakter)" className="w-full rounded-[8px] border border-[#BEC9C6] px-4 py-2.5 text-sm" />
+                <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} placeholder="Ulangi kata sandi baru" className="w-full rounded-[8px] border border-[#BEC9C6] px-4 py-2.5 text-sm" />
+                <button type="button" disabled={resetBusy} onClick={saveNewPassword} className="w-full rounded-[8px] bg-[#00433C] text-white px-4 py-2 font-semibold disabled:opacity-50">{resetBusy ? 'Menyimpan...' : 'Simpan Kata Sandi Baru'}</button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-[#3F4947]">Kami akan mengirim tautan pengaturan ulang ke alamat email akun yang Anda masukkan pada formulir login.</p>
+                <button type="button" disabled={resetBusy} onClick={sendPasswordReset} className="w-full rounded-[8px] bg-[#00433C] text-white px-4 py-2 font-semibold disabled:opacity-50">{resetBusy ? 'Mengirim...' : 'Kirim Tautan Reset ke Email'}</button>
+              </>
+            )}
+            {resetMessage && <p role="status" className="text-sm text-[#3F4947] break-words">{resetMessage}</p>}
           </div>
         </div>
-      )}
+      )}}
     </div>
   );
 }
