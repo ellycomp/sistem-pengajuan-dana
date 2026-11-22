@@ -352,7 +352,24 @@ export default function App() {
       },
     });
     if (error || data?.error) {
-      return { ok: false, error: data?.error || error?.message || 'Gagal membuat akun.' };
+      let serverMessage = data?.error as string | undefined;
+      let serverDetail = '';
+      // Supabase FunctionsHttpError keeps the response body in error.context.
+      if (error && !serverMessage) {
+        try {
+          const response = (error as any).context;
+          if (response && typeof response.clone === 'function') {
+            const body = await response.clone().json();
+            serverMessage = body?.error || body?.message;
+            if (body?.detail) serverDetail = String(body.detail);
+            if (body?.diagnostic) serverDetail = JSON.stringify(body.diagnostic);
+          }
+        } catch {
+          // Fall back to the SDK error message below.
+        }
+      }
+      const message = serverMessage || error?.message || 'Gagal membuat akun.';
+      return { ok: false, error: serverDetail ? `${message} — ${serverDetail}` : message };
     }
     const created = data.profile;
     const newAccount: UserAccount = {
