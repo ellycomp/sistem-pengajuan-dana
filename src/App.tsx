@@ -65,18 +65,12 @@ function loadInitialState(): PersistedState {
         parsed.accounts.length > 0 &&
         parsed.currentAccountId
       ) {
-        const migratedAccounts = [...parsed.accounts];
-        INITIAL_ACCOUNTS.forEach((seedAccount) => {
-          const existingIndex = migratedAccounts.findIndex((account) => account.id === seedAccount.id);
-          if (existingIndex === -1) {
-            migratedAccounts.push(seedAccount);
-          } else if (['acc-sarana', 'acc-bendahara-sekolah'].includes(seedAccount.id)) {
-            migratedAccounts[existingIndex] = {
-              ...migratedAccounts[existingIndex],
-              ...seedAccount,
-              password: migratedAccounts[existingIndex].password,
-            };
-          }
+        // Keep only the primary director account in local app state.
+        const migratedAccounts = INITIAL_ACCOUNTS.map((seedAccount) => {
+          const existing = parsed.accounts?.find((account) =>
+            account.email?.toLowerCase() === seedAccount.email.toLowerCase()
+          );
+          return existing ? { ...seedAccount, ...existing, role: 'direktur' as RoleId } : seedAccount;
         });
         return {
           isLoggedIn: Boolean(parsed.isLoggedIn),
