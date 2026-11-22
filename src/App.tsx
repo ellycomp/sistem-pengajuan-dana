@@ -731,6 +731,7 @@ export default function App() {
         {activeTab === 'persetujuan' && (
           <TierReviewView
             requests={requests}
+            currentUserName={currentUser.name}
             selectedTier={selectedTier}
             onSelectTier={setSelectedTier}
             onApproveStage={handleApproveStage}
