@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%pwa-icon.svg" />
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <meta name="theme-color" content="#00433C" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pengajuan Dana" />
+    <link rel="apple-touch-icon" href="%BASE_URL%pwa-icon.svg" />
     <title>Sistem Pengajuan Dana — SIT Qudwah Sungai Rengit</title>
     <meta name="description" content="Portal pengajuan dana belanja sekolah dan persetujuan berjenjang 5 tahap untuk SIT Qudwah Sungai Rengit." />
     <meta property="og:title" content="Sistem Pengajuan Dana — SIT Qudwah Sungai Rengit" />
@@ -17,6 +23,14 @@
   <body class="bg-[#F8FAF8] text-[#191C1B] font-body antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('%BASE_URL%sw.js', { scope: '%BASE_URL%' })
+            .catch((error) => console.error('PWA service worker registration failed:', error));
+        });
+      }
+    </script>
   </body>
 </html>
 
