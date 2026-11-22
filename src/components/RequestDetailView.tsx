@@ -25,6 +25,7 @@ import { SchoolLogo } from './SchoolLogo';
 interface RequestDetailViewProps {
   request: FundRequest;
   currentRole: RoleId;
+  currentUserName: string;
   onBack: () => void;
   onApproveStage: (requestId: string, note: string) => void;
   onRequestRevision: (requestId: string, note: string) => void;
@@ -34,6 +35,7 @@ interface RequestDetailViewProps {
 
 export function RequestDetailView({
   request,
+  currentUserName,
   onBack,
   onApproveStage,
   onRequestRevision,
@@ -85,6 +87,8 @@ export function RequestDetailView({
   const activeTierConfig = TIER_CONFIGS.find(
     (t) => t.stageStep === request.currentStageStep
   );
+  const activeStage = request.stages.find((stage) => stage.step === request.currentStageStep);
+  const canReviewCurrentStage = request.status === 'diproses' && activeStage?.personName === currentUserName;
 
   const primaryApproveLabel = activeTierConfig
     ? request.currentStageStep === 5
@@ -173,7 +177,7 @@ export function RequestDetailView({
             <span>Cetak Lembar Tanda Tangan</span>
           </button>
 
-          {request.status === 'diproses' && (
+          {canReviewCurrentStage && (
             <>
               <button
                 type="button"
@@ -556,7 +560,7 @@ export function RequestDetailView({
       </main>
 
       {/* Mobile Sticky Bottom Action Bar */}
-      {request.status === 'diproses' && (
+      {canReviewCurrentStage && (
         <footer className="no-print lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 bg-[#FFFFFF] border-t border-[#BEC9C6] p-3 grid grid-cols-2 gap-2">
           <button
             type="button"
