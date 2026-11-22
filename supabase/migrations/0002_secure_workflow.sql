@@ -1,3 +1,8 @@
+-- Authenticated application users need read access to their profile row.
+-- The RLS policy from 0001 controls which rows are visible; this grant
+-- supplies the missing table-level SELECT privilege.
+grant select on table public.profiles to authenticated;
+
 -- Secure workflow: all business writes go through checked RPC functions.
 -- Safe to run after 0001_initial_schema.sql. Does not delete existing records.
 
