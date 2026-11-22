@@ -1,8 +1,10 @@
-const CACHE_NAME = 'sit-qudwah-pwa-v4';
+const CACHE_NAME = 'sit-qudwah-pwa-v5';
 const APP_ROOT = '/sistem-pengajuan-dana/';
 const APP_SHELL = [APP_ROOT, APP_ROOT + 'manifest.webmanifest', APP_ROOT + 'pwa-icon.svg'];
 const BRAND_ASSETS = [
   APP_ROOT + 'logo-sit-qudwah.svg',
+  APP_ROOT + 'logo-sit-qudwah.svg?v=20261123',
+  APP_ROOT + 'pwa-icon.svg?v=20261123',
   APP_ROOT + 'pwa-icon.svg',
   APP_ROOT + 'manifest.webmanifest',
 ];
