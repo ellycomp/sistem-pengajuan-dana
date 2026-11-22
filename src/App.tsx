@@ -876,31 +876,34 @@ export default function App() {
     setToastMessage(`Pengajuan ${code} berhasil dikirim ke ${stageTwoReviewer!.name} (Kepala Seksi Sarana).`);
   };
 
-  const handleAddBudgetLine = (payload: Omit<BudgetLine, 'id' | 'usedAmount'>): { ok: boolean; error?: string } => {
+  const handleAddBudgetLine = async (payload: Omit<BudgetLine, 'id' | 'usedAmount'>): Promise<{ ok: boolean; error?: string }> => {
     if (currentUser.role !== 'direktur' && currentUser.role !== 'bendahara-umum') {
       return { ok: false, error: 'Hanya Direktur atau Bendahara Umum yang dapat menambahkan pos anggaran.' };
     }
+    if (!supabase) return { ok: false, error: 'Koneksi database tidak tersedia.' };
     const duplicate = budgetLines.some(
       (line) => line.code.toLowerCase() === payload.code.toLowerCase() ||
         line.name.toLowerCase() === payload.name.toLowerCase()
     );
     if (duplicate) return { ok: false, error: 'Kode atau nama pos anggaran sudah digunakan.' };
-    const newLine: BudgetLine = {
-      ...payload,
-      id: `budget-${Date.now()}`,
-      usedAmount: 0,
-    };
+    const newLine: BudgetLine = { ...payload, id: crypto.randomUUID(), usedAmount: 0 };
+    const { error } = await supabase.rpc('save_budget_line', {
+      p_action: 'insert', p_id: newLine.id, p_name: newLine.name,
+      p_code: newLine.code, p_unit: newLine.unit, p_annual_limit: newLine.annualLimit
+    });
+    if (error) return { ok: false, error: error.message };
     setBudgetLines((prev) => [...prev, newLine]);
-    setToastMessage(`Pos anggaran "${newLine.name}" berhasil ditambahkan.`);
+    setToastMessage(`Pos anggaran "${newLine.name}" berhasil disimpan ke database.`);
     return { ok: true };
   };
 
-  const handleUpdateBudgetLine = (id: string, payload: Omit<BudgetLine, 'id' | 'usedAmount'>): { ok: boolean; error?: string } => {
+  const handleUpdateBudgetLine = async (id: string, payload: Omit<BudgetLine, 'id' | 'usedAmount'>): Promise<{ ok: boolean; error?: string }> => {
     if (currentUser.role !== 'direktur' && currentUser.role !== 'bendahara-umum') {
       return { ok: false, error: 'Hanya Direktur atau Bendahara Umum yang dapat mengubah pos anggaran.' };
     }
     const existing = budgetLines.find((line) => line.id === id);
     if (!existing) return { ok: false, error: 'Pos anggaran tidak ditemukan.' };
+    if (!supabase) return { ok: false, error: 'Koneksi database tidak tersedia.' };
     const duplicate = budgetLines.some(
       (line) => line.id !== id && (
         line.code.toLowerCase() === payload.code.toLowerCase() ||
@@ -908,8 +911,13 @@ export default function App() {
       )
     );
     if (duplicate) return { ok: false, error: 'Kode atau nama pos anggaran sudah digunakan oleh pos lain.' };
+    const { error } = await supabase.rpc('save_budget_line', {
+      p_action: 'update', p_id: id, p_name: payload.name,
+      p_code: payload.code, p_unit: payload.unit, p_annual_limit: payload.annualLimit
+    });
+    if (error) return { ok: false, error: error.message };
     setBudgetLines((prev) => prev.map((line) => line.id === id ? { ...line, ...payload } : line));
-    setToastMessage(`Pos anggaran "${payload.name}" berhasil diperbarui.`);
+    setToastMessage(`Pos anggaran "${payload.name}" berhasil diperbarui di database.`);
     return { ok: true };
   };
 

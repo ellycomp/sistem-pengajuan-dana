@@ -35,8 +35,8 @@ interface BudgetViewProps {
   budgetLines: BudgetLine[];
   requests: FundRequest[];
   currentUser: UserProfile;
-  onAddBudgetLine: (payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => { ok: boolean; error?: string };
-  onUpdateBudgetLine: (id: string, payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => { ok: boolean; error?: string };
+  onAddBudgetLine: (payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => Promise<{ ok: boolean; error?: string }>;
+  onUpdateBudgetLine: (id: string, payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine, onUpdateBudgetLine }: BudgetViewProps) {
@@ -90,7 +90,7 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
 
       <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 max-w-7xl w-full mx-auto flex flex-col gap-6">
         {showAddForm && canManageBudget && (
-          <form onSubmit={(event) => {
+          <form onSubmit={async (event) => {
             event.preventDefault();
             if (!newBudgetName.trim() || !newBudgetCode.trim() || !newBudgetUnit.trim()) {
               setFormError('Kode pos, nama pos, dan unit wajib diisi.');
@@ -103,9 +103,9 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
               unit: newBudgetUnit.trim(),
               annualLimit: existing?.annualLimit ?? 0,
             };
-            const result = editingBudgetId
+            const result = await (editingBudgetId
               ? onUpdateBudgetLine(editingBudgetId, payload)
-              : onAddBudgetLine(payload);
+              : onAddBudgetLine(payload));
             if (!result.ok) {
               setFormError(result.error || 'Gagal menyimpan pos.');
               return;
