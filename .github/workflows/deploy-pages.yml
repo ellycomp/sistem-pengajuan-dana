@@ -47,6 +47,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      # GitHub Pages is currently also configured for branch/Jekyll deployment.
+      # Wait for that automatic deployment to finish, then publish the Vite dist artifact last.
+      - name: Wait for branch-based Pages deployment
+        run: sleep 45
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
