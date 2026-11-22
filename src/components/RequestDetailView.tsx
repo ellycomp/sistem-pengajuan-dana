@@ -9,6 +9,8 @@ import {
   Hourglass,
   Printer,
   RotateCcw,
+  Plus,
+  Trash2,
   X,
 } from 'lucide-react';
 import {
@@ -17,7 +19,7 @@ import {
   getStatusLabel,
   TIER_CONFIGS,
 } from '../data/seedData';
-import { FundRequest, RoleId } from '../types/kassekolah';
+import { FundRequest, LineItem, RoleId } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
 
 interface RequestDetailViewProps {
@@ -27,6 +29,7 @@ interface RequestDetailViewProps {
   onApproveStage: (requestId: string, note: string) => void;
   onRequestRevision: (requestId: string, note: string) => void;
   onResubmit: (requestId: string) => void;
+  onUpdateRevision: (requestId: string, updates: Pick<FundRequest, 'title' | 'targetDate' | 'attachmentName' | 'items'>) => void;
 }
 
 export function RequestDetailView({
@@ -35,6 +38,7 @@ export function RequestDetailView({
   onApproveStage,
   onRequestRevision,
   onResubmit,
+  onUpdateRevision,
 }: RequestDetailViewProps) {
   const [actionModal, setActionModal] = useState<'approve' | 'revisi' | null>(
     null
@@ -44,6 +48,11 @@ export function RequestDetailView({
   const [showAttachmentModal, setShowAttachmentModal] =
     useState<boolean>(false);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
+  const [showRevisionEditor, setShowRevisionEditor] = useState<boolean>(false);
+  const [revisionTitle, setRevisionTitle] = useState(request.title);
+  const [revisionTargetDate, setRevisionTargetDate] = useState(request.targetDate);
+  const [revisionAttachment, setRevisionAttachment] = useState(request.attachmentName);
+  const [revisionItems, setRevisionItems] = useState<LineItem[]>(request.items.map((item) => ({ ...item })));
 
   const totalAmount = calculateRequestTotal(request.items);
   const isAboveTwoMillion = totalAmount > 2_000_000;
@@ -186,6 +195,15 @@ export function RequestDetailView({
           )}
 
           {request.status === 'revisi' && (
+            <>
+            <button
+              type="button"
+              onClick={() => { setRevisionTitle(request.title); setRevisionTargetDate(request.targetDate); setRevisionAttachment(request.attachmentName); setRevisionItems(request.items.map((item) => ({ ...item }))); setShowRevisionEditor(true); }}
+              className="inline-flex items-center justify-center gap-2 rounded-[8px] border border-[#00433C] text-[#00433C] bg-white px-4 py-2 font-label text-[14px] leading-[20px] font-semibold hover:bg-[#E8F3F0] whitespace-nowrap shrink-0"
+            >
+              <FileEdit className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Revisi Pengajuan</span>
+            </button>
             <button
               type="button"
               onClick={() => onResubmit(request.id)}
@@ -194,6 +212,7 @@ export function RequestDetailView({
               <RotateCcw className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Ajukan Ulang Pengajuan</span>
             </button>
+            </>
           )}
         </div>
       </header>
@@ -1178,6 +1197,40 @@ export function RequestDetailView({
           </div>
         </div>
       </div>
+
+      {showRevisionEditor && request.status === 'revisi' && (
+        <div className="no-print fixed inset-0 z-50 bg-[#191C1B]/55 flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="revision-editor-title">
+          <form className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-[12px] bg-white border border-[#BEC9C6] shadow-xl p-5 sm:p-6 flex flex-col gap-4" onSubmit={(e) => {
+            e.preventDefault();
+            if (!revisionTitle.trim() || revisionItems.length === 0 || revisionItems.some((item) => !item.name.trim() || item.quantity <= 0 || item.unitPrice <= 0)) return;
+            onUpdateRevision(request.id, { title: revisionTitle.trim(), targetDate: revisionTargetDate.trim(), attachmentName: revisionAttachment.trim(), items: revisionItems.map((item) => ({ ...item, name: item.name.trim() })) });
+            setShowRevisionEditor(false);
+          }}>
+            <div className="flex items-start justify-between gap-3 border-b border-[#BEC9C6] pb-3">
+              <div><h2 id="revision-editor-title" className="text-lg font-bold text-[#191C1B]">Revisi Pengajuan Dana</h2><p className="text-sm text-[#3F4947] mt-1">Perbaiki data sesuai catatan pemeriksa, lalu simpan sebelum mengajukan ulang.</p></div>
+              <button type="button" onClick={() => setShowRevisionEditor(false)} aria-label="Tutup" className="w-9 h-9 rounded-lg border border-[#BEC9C6] flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="rounded-lg bg-[#FFF7E0] border border-[#F0D58A] p-3 text-sm text-[#694B00]"><strong>Catatan pemeriksa:</strong> {request.revisionNote || 'Silakan periksa kembali pengajuan.'}</div>
+            <label className="flex flex-col gap-1 text-sm font-semibold text-[#191C1B]">Judul Pengajuan<input required value={revisionTitle} onChange={(e) => setRevisionTitle(e.target.value)} className="w-full rounded-lg border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#191C1B]">Target Pakai<input value={revisionTargetDate} onChange={(e) => setRevisionTargetDate(e.target.value)} className="w-full rounded-lg border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+              <label className="flex flex-col gap-1 text-sm font-semibold text-[#191C1B]">Nama Lampiran RAB<input value={revisionAttachment} onChange={(e) => setRevisionAttachment(e.target.value)} className="w-full rounded-lg border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+            </div>
+            <div className="flex items-center justify-between gap-2"><h3 className="font-semibold text-sm text-[#191C1B]">Rincian Barang / Jasa</h3><button type="button" onClick={() => setRevisionItems((items) => [...items, { id: `rev-item-${Date.now()}`, name: '', quantity: 1, unitLabel: 'unit', unitPrice: 1000 }])} className="inline-flex items-center gap-1 rounded-lg border border-[#BEC9C6] px-3 py-2 text-sm font-semibold text-[#00433C]"><Plus className="w-4 h-4" /> Tambah Item</button></div>
+            {revisionItems.map((item, index) => (
+              <div key={item.id} className="grid grid-cols-12 gap-2 rounded-lg border border-[#BEC9C6] p-3">
+                <label className="col-span-12 sm:col-span-5 flex flex-col gap-1 text-xs font-semibold">Nama Barang<input value={item.name} onChange={(e) => setRevisionItems((items) => items.map((row, i) => i === index ? { ...row, name: e.target.value } : row))} className="w-full rounded-md border border-[#BEC9C6] px-2 py-2 text-sm font-normal" /></label>
+                <label className="col-span-4 sm:col-span-2 flex flex-col gap-1 text-xs font-semibold">Jumlah<input type="number" min="1" value={item.quantity} onChange={(e) => setRevisionItems((items) => items.map((row, i) => i === index ? { ...row, quantity: Number(e.target.value) } : row))} className="w-full rounded-md border border-[#BEC9C6] px-2 py-2 text-sm font-normal" /></label>
+                <label className="col-span-4 sm:col-span-2 flex flex-col gap-1 text-xs font-semibold">Satuan<input value={item.unitLabel} onChange={(e) => setRevisionItems((items) => items.map((row, i) => i === index ? { ...row, unitLabel: e.target.value } : row))} className="w-full rounded-md border border-[#BEC9C6] px-2 py-2 text-sm font-normal" /></label>
+                <label className="col-span-4 sm:col-span-2 flex flex-col gap-1 text-xs font-semibold">Harga Satuan<input type="number" min="1" value={item.unitPrice} onChange={(e) => setRevisionItems((items) => items.map((row, i) => i === index ? { ...row, unitPrice: Number(e.target.value) } : row))} className="w-full rounded-md border border-[#BEC9C6] px-2 py-2 text-sm font-normal" /></label>
+                <div className="col-span-12 sm:col-span-1 flex items-end justify-end"><button type="button" disabled={revisionItems.length === 1} onClick={() => setRevisionItems((items) => items.filter((_, i) => i !== index))} aria-label={`Hapus item ${index + 1}`} className="rounded-md p-2 text-red-600 hover:bg-red-50 disabled:opacity-30"><Trash2 className="w-4 h-4" /></button></div>
+              </div>
+            ))}
+            <div className="flex flex-wrap justify-end gap-2 border-t border-[#BEC9C6] pt-4"><button type="button" onClick={() => setShowRevisionEditor(false)} className="rounded-lg border border-[#BEC9C6] px-4 py-2 text-sm font-semibold">Batal</button><button type="submit" className="rounded-lg bg-[#00433C] px-4 py-2 text-sm font-semibold text-white">Simpan Revisi</button></div>
+          </form>
+        </div>
+      )}
+
     </div>
   );
 }
