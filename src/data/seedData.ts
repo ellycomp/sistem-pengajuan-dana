@@ -14,7 +14,7 @@ export const SCHOOL_UNITS: SchoolUnit[] = [
   'KB Islam Terpadu Qudwah',
 ];
 
-export const SIT_QUDWAH_LOGO_URL = `${import.meta.env.BASE_URL}logo-sit-qudwah.png`;
+export const SIT_QUDWAH_LOGO_URL = `${import.meta.env.BASE_URL}logo-sit-qudwah.svg`;
 
 export const ROLE_USERS: Record<RoleId, UserProfile> = {
   guru: {
