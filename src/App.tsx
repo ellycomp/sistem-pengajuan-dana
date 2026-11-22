@@ -391,13 +391,21 @@ export default function App() {
     setActiveTab('detail');
   };
 
-  const handleApproveStage = (requestId: string, note: string) => {
+  const handleApproveStage = async (requestId: string, note: string) => {
     const targetRequest = requests.find((req) => req.id === requestId);
     const activeStage = targetRequest?.stages.find((stage) => stage.step === targetRequest.currentStageStep);
     if (!targetRequest || currentUser.role === 'guru' || targetRequest.status !== 'diproses' || activeStage?.personName !== currentUser.name) {
       setToastMessage('Anda tidak memiliki wewenang untuk memeriksa tahap pengajuan ini. Pengajuan harus diperiksa oleh petugas pada jenjang yang sedang aktif.');
       return;
     }
+    if (!supabase) { setToastMessage('Koneksi database belum tersedia.'); return; }
+    const { error: reviewError } = await supabase.rpc('review_fund_request', {
+      p_request_id: requestId,
+      p_action: 'approve',
+      p_note: note,
+      p_timestamp: formatCurrentTimestamp(),
+    });
+    if (reviewError) { setToastMessage(`Gagal menyimpan persetujuan: ${reviewError.message}`); return; }
     const timestamp = formatCurrentTimestamp();
     let approvedTitle = '';
     let completedFully = false;
@@ -465,13 +473,21 @@ export default function App() {
     }
   };
 
-  const handleRequestRevision = (requestId: string, note: string) => {
+  const handleRequestRevision = async (requestId: string, note: string) => {
     const targetRequest = requests.find((req) => req.id === requestId);
     const activeStage = targetRequest?.stages.find((stage) => stage.step === targetRequest.currentStageStep);
     if (!targetRequest || currentUser.role === 'guru' || targetRequest.status !== 'diproses' || activeStage?.personName !== currentUser.name) {
       setToastMessage('Anda tidak memiliki wewenang untuk meminta revisi pada tahap ini.');
       return;
     }
+    if (!supabase) { setToastMessage('Koneksi database belum tersedia.'); return; }
+    const { error: reviewError } = await supabase.rpc('review_fund_request', {
+      p_request_id: requestId,
+      p_action: 'revision',
+      p_note: note,
+      p_timestamp: formatCurrentTimestamp(),
+    });
+    if (reviewError) { setToastMessage(`Gagal mengirim revisi: ${reviewError.message}`); return; }
     const timestamp = formatCurrentTimestamp();
     let revisedTitle = '';
 
@@ -532,13 +548,26 @@ export default function App() {
     setToastMessage('Perbaikan pengajuan berhasil disimpan. Silakan ajukan ulang setelah selesai.');
   };
 
-  const handleResubmit = (requestId: string) => {
+  const handleResubmit = async (requestId: string) => {
     const targetRequest = requests.find((req) => req.id === requestId);
     if (!targetRequest || targetRequest.status !== 'revisi' || targetRequest.requesterName !== currentUser.name) {
       setToastMessage('Hanya pengaju yang bersangkutan yang dapat mengajukan ulang berkas revisi.');
       return;
     }
+    if (!supabase) { setToastMessage('Koneksi database belum tersedia.'); return; }
     const timestamp = formatCurrentTimestamp();
+    const { error: resubmitError } = await supabase.rpc('resubmit_fund_request', {
+      p_request_id: requestId,
+      p_title: targetRequest.title,
+      p_target_date: targetRequest.targetDate,
+      p_attachment_name: targetRequest.attachmentName,
+      p_items: targetRequest.items.map((item) => ({
+        id: item.id, name: item.name, quantity: item.quantity,
+        unitLabel: item.unitLabel, unitPrice: item.unitPrice,
+      })),
+      p_timestamp: timestamp,
+    });
+    if (resubmitError) { setToastMessage(`Gagal mengajukan ulang: ${resubmitError.message}`); return; }
     let title = '';
 
     setRequests((prev) =>
@@ -584,7 +613,7 @@ export default function App() {
     );
   };
 
-  const handleCreateRequest = (payload: {
+  const handleCreateRequest = async (payload: {
     requesterRole: string;
     title: string;
     schoolUnit: SchoolUnit;
@@ -681,6 +710,30 @@ export default function App() {
       ],
     };
 
+    if (!supabase) { setToastMessage('Koneksi database belum tersedia.'); return; }
+    const { error: createError } = await supabase.rpc('create_fund_request', {
+      p_id: newReq.id,
+      p_code: newReq.code,
+      p_title: newReq.title,
+      p_school_unit: newReq.schoolUnit,
+      p_budget_category_id: newReq.budgetCategoryId,
+      p_budget_category_name: newReq.budgetCategoryName,
+      p_unit: newReq.unit,
+      p_requester_role: newReq.requesterRole,
+      p_submitted_date: newReq.submittedDate,
+      p_target_date: newReq.targetDate,
+      p_attachment_name: newReq.attachmentName,
+      p_items: newReq.items.map((item) => ({
+        id: item.id, name: item.name, quantity: item.quantity,
+        unitLabel: item.unitLabel, unitPrice: item.unitPrice,
+      })),
+      p_stages: newReq.stages.map((stage) => ({
+        step: stage.step, roleKey: stage.roleKey, roleLabel: stage.roleLabel,
+        personName: stage.personName, personTitle: stage.personTitle,
+        state: stage.state, note: stage.note, timestamp: stage.timestamp,
+      })),
+    });
+    if (createError) { setToastMessage(`Pengajuan gagal disimpan ke database: ${createError.message}`); return; }
     setRequests((prev) => [newReq, ...prev]);
     setSelectedRequestId(newReq.id);
     setActiveTab('detail');
