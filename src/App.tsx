@@ -157,6 +157,76 @@ export default function App() {
         return;
       }
 
+      // Setelah profil tervalidasi, ambil data operasional dari database.
+      const [requestResult, budgetResult] = await Promise.all([
+        supabase
+          .from('fund_requests')
+          .select('*, request_items(*), approval_stages(*)')
+          .order('created_at', { ascending: false }),
+        supabase.from('budget_lines').select('*').order('name'),
+      ]);
+
+      if (!active) return;
+
+      if (requestResult.error) {
+        setToastMessage(`Data pengajuan belum dapat dimuat: ${requestResult.error.message}`);
+      } else {
+        const cloudRequests: FundRequest[] = (requestResult.data || []).map((row: any) => ({
+          id: row.id,
+          code: row.code,
+          title: row.title,
+          schoolUnit: row.school_unit,
+          budgetCategoryId: row.budget_category_id,
+          budgetCategoryName: row.budget_category_name,
+          unit: row.unit || '',
+          requesterName: row.requester_name,
+          requesterRole: row.requester_role,
+          submittedDate: row.submitted_date,
+          targetDate: row.target_date,
+          attachmentName: row.attachment_name || '',
+          status: row.status,
+          currentStageStep: row.current_stage_step,
+          revisionNote: row.revision_note || undefined,
+          revisionBy: row.revision_by || undefined,
+          items: (row.request_items || []).map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            quantity: Number(item.quantity),
+            unitLabel: item.unit_label || '',
+            unitPrice: Number(item.unit_price),
+          })),
+          stages: (row.approval_stages || [])
+            .sort((a: any, b: any) => a.step - b.step)
+            .map((stage: any) => ({
+              step: stage.step,
+              roleKey: stage.role_key,
+              roleLabel: stage.role_label,
+              personName: stage.person_name,
+              personTitle: stage.person_title || '',
+              state: stage.state,
+              note: stage.note || undefined,
+              timestamp: stage.timestamp_label || undefined,
+            })),
+        }));
+        setRequests(cloudRequests);
+        if (cloudRequests.length > 0) {
+          setSelectedRequestId(cloudRequests[0].id);
+        }
+      }
+
+      if (budgetResult.error) {
+        setToastMessage(`Data anggaran belum dapat dimuat: ${budgetResult.error.message}`);
+      } else if ((budgetResult.data || []).length > 0) {
+        setBudgetLines(budgetResult.data.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          code: row.code || '',
+          unit: row.unit || '',
+          annualLimit: Number(row.annual_limit),
+          usedAmount: Number(row.used_amount),
+        })));
+      }
+
       const account: UserAccount = {
         id: profile.id,
         name: profile.name,
