@@ -14,8 +14,7 @@ export const SCHOOL_UNITS: SchoolUnit[] = [
   'KB Islam Terpadu Qudwah',
 ];
 
-export const SIT_QUDWAH_LOGO_URL =
-  'https://lh3.googleusercontent.com/aida/ALJJyrCHxUfOShCpVfD02oMZxeIcJ32sH6nrdTLyIJa4h7kDoyhs_qGfOo43ic4Kta1zuMovz7EfR1tYka2CzEOhZjg1ZmdIdRTiiQbhxQJkGQe3ZoAQOmK7oVsnWNTv7yU1wOqG5f-rOOoEvRWip7TUFNg9wl6ia6p5-MpjTmPA-CykJW3d6KC8wW9SeUB3u8ZBkCFAfwWYaJyOb0jPlwQckh8zMtn0J2O-_q7Ycizu8saZyQxor-Fr5rLYKem3';
+export const SIT_QUDWAH_LOGO_URL = `${import.meta.env.BASE_URL}logo-sit-qudwah.png`;
 
 export const ROLE_USERS: Record<RoleId, UserProfile> = {
   guru: {
