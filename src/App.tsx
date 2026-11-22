@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { supabase } from './lib/supabase';
 import { CheckCircle2, X } from 'lucide-react';
 import {
   BudgetView,
@@ -161,6 +162,7 @@ export default function App() {
   ).length;
 
   const handleLogin = (account: UserAccount) => {
+    setAccounts((prev) => prev.some((item) => item.id === account.id) ? prev.map((item) => item.id === account.id ? account : item) : [...prev, account]);
     setCurrentAccountId(account.id);
     setIsLoggedIn(true);
     if (account.role !== 'guru' && account.role !== 'direktur') {
@@ -173,6 +175,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    void supabase?.auth.signOut();
     setIsLoggedIn(false);
     setToastMessage('');
   };
