@@ -78,6 +78,42 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Data permintaan tidak valid." }, 400);
   }
 
+  if (input.action === "disable_non_primary") {
+    let page = 1;
+    let disabledCount = 0;
+    while (true) {
+      const { data: pageData, error: listError } = await admin.auth.admin.listUsers({
+        page,
+        perPage: 100,
+      });
+      if (listError) {
+        console.error("Failed listing Auth users for cleanup", listError.message);
+        return json({ error: "Gagal membaca daftar akun Auth.", detail: listError.message }, 500);
+      }
+      const users = pageData.users || [];
+      for (const user of users) {
+        if (user.id === authData.user.id) continue;
+        const { error: banError } = await admin.auth.admin.updateUserById(user.id, {
+          ban_duration: "876000h",
+        });
+        if (banError) {
+          console.error("Failed disabling non-primary account", { userId: user.id, message: banError.message });
+          return json({ error: "Sebagian akun gagal dinonaktifkan.", detail: banError.message, disabledCount }, 500);
+        }
+        disabledCount += 1;
+      }
+      if (users.length < 100) break;
+      page += 1;
+    }
+    // Keep profile rows intact because existing fund requests reference them.
+    return json({
+      success: true,
+      disabledCount,
+      preservedPrimaryEmail: authData.user.email,
+      note: "Akun selain Direktur dinonaktifkan untuk login; profil dipertahankan demi riwayat pengajuan.",
+    });
+  }
+
   if (input.action !== "create") return json({ error: "Aksi belum didukung." }, 400);
   const name = String(input.name ?? "").trim();
   const email = String(input.email ?? "").trim().toLowerCase();
