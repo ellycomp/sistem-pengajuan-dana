@@ -6,7 +6,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: '/sistem-pengajuan-dana/',
+    base: process.env.CAPACITOR_BUILD === 'true' ? './' : '/sistem-pengajuan-dana/',
     plugins: [
       react(),
       tailwindcss(),
