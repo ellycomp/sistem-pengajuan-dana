@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   AlertCircle,
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   FileText,
   Hourglass,
   Printer,
+  UploadCloud,
   RotateCcw,
   Plus,
   Trash2,
@@ -31,6 +32,7 @@ interface RequestDetailViewProps {
   onRequestRevision: (requestId: string, note: string) => void;
   onResubmit: (requestId: string) => void;
   onUpdateRevision: (requestId: string, updates: Pick<FundRequest, 'title' | 'targetDate' | 'attachmentName' | 'items'>) => void;
+  onUploadPdf: (file: File) => Promise<{ ok: boolean; error?: string; url?: string }>;
 }
 
 export function RequestDetailView({
@@ -42,6 +44,7 @@ export function RequestDetailView({
   onRequestRevision,
   onResubmit,
   onUpdateRevision,
+  onUploadPdf,
 }: RequestDetailViewProps) {
   const [actionModal, setActionModal] = useState<'approve' | 'revisi' | null>(
     null
@@ -52,6 +55,9 @@ export function RequestDetailView({
     useState<boolean>(false);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
   const [showRevisionEditor, setShowRevisionEditor] = useState<boolean>(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [revisionTitle, setRevisionTitle] = useState(request.title);
   const [revisionTargetDate, setRevisionTargetDate] = useState(request.targetDate);
   const [revisionAttachment, setRevisionAttachment] = useState(request.attachmentName);
@@ -814,7 +820,39 @@ export function RequestDetailView({
                   Direktur
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  ref={pdfInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="hidden"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (!file) return;
+                    setUploadingPdf(true);
+                    setUploadMessage('');
+                    try {
+                      const result = await onUploadPdf(file);
+                      setUploadMessage(result.ok
+                        ? 'PDF berhasil diunggah ke arsip Google Drive.'
+                        : result.error || 'Upload PDF gagal.');
+                    } catch (error) {
+                      setUploadMessage(error instanceof Error ? error.message : 'Upload PDF gagal.');
+                    } finally {
+                      setUploadingPdf(false);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={uploadingPdf}
+                  onClick={() => pdfInputRef.current?.click()}
+                  className="inline-flex items-center gap-2 rounded-[8px] border border-[#00433C] text-[#00433C] px-4 py-2 font-label text-[13px] font-semibold hover:bg-[#E8F2EF] disabled:opacity-50"
+                >
+                  <UploadCloud className="w-4 h-4" aria-hidden="true" />
+                  <span>{uploadingPdf ? 'Mengunggah...' : 'Upload PDF ke Google Drive'}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => window.print()}
@@ -832,6 +870,9 @@ export function RequestDetailView({
                   <X className="w-4 h-4" />
                 </button>
               </div>
+              {uploadMessage && (
+                <p role="status" className="px-6 pb-3 text-[12px] text-[#00433C]">{uploadMessage}</p>
+              )}
             </div>
 
             <div className="p-4 lg:p-6 overflow-y-auto bg-[#ECEEEC]">
