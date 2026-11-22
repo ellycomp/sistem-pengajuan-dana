@@ -45,152 +45,112 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
   const [newBudgetName, setNewBudgetName] = useState('');
   const [newBudgetCode, setNewBudgetCode] = useState('');
   const [newBudgetUnit, setNewBudgetUnit] = useState('');
-  const [newBudgetLimit, setNewBudgetLimit] = useState('');
   const [formError, setFormError] = useState('');
-  const rows = useMemo(() => {
-    return budgetLines.map((line) => {
-      const pendingReserved = requests
-        .filter(
-          (r) => r.budgetCategoryId === line.id && r.status === 'diproses'
-        )
-        .reduce((sum, r) => sum + calculateRequestTotal(r.items), 0);
 
-      const remaining = Math.max(
-        0,
-        line.annualLimit - line.usedAmount - pendingReserved
-      );
-      const usedPct = Math.min(
-        100,
-        Math.round(((line.usedAmount + pendingReserved) / line.annualLimit) * 100)
-      );
+  const rows = useMemo(() => budgetLines.map((line) => ({
+    ...line,
+    pendingAmount: requests
+      .filter((request) => request.budgetCategoryId === line.id && request.status === 'diproses')
+      .reduce((sum, request) => sum + calculateRequestTotal(request.items), 0),
+  })), [budgetLines, requests]);
 
-      return {
-        ...line,
-        pendingReserved,
-        remaining,
-        usedPct,
-      };
-    });
-  }, [budgetLines, requests]);
+  const totals = useMemo(() => rows.reduce((acc, row) => ({
+    used: acc.used + row.usedAmount,
+    pending: acc.pending + row.pendingAmount,
+  }), { used: 0, pending: 0 }), [rows]);
 
-  const totals = useMemo(() => {
-    return rows.reduce(
-      (acc, r) => ({
-        limit: acc.limit + r.annualLimit,
-        used: acc.used + r.usedAmount,
-        reserved: acc.reserved + r.pendingReserved,
-        remaining: acc.remaining + r.remaining,
-      }),
-      { limit: 0, used: 0, reserved: 0, remaining: 0 }
-    );
-  }, [rows]);
+  const resetForm = () => {
+    setShowAddForm(false);
+    setEditingBudgetId(null);
+    setNewBudgetName('');
+    setNewBudgetCode('');
+    setNewBudgetUnit('');
+    setFormError('');
+  };
 
   return (
     <div className="flex-1 min-w-0 flex flex-col pb-24 lg:pb-0">
-      <header className="hidden lg:flex bg-[#FFFFFF] border-b border-[#BEC9C6] px-8 py-6 items-center justify-between gap-4">
+      <header className="hidden lg:flex bg-white border-b border-[#BEC9C6] px-8 py-6 items-center justify-between gap-4">
         <div>
-          <h1 className="font-headline text-[28px] leading-[34px] tracking-[-0.25px] font-semibold text-[#191C1B]">
-            Pos Anggaran Belanja TA 2026
-          </h1>
-          <p className="font-body text-[14px] leading-[20px] text-[#3F4947] mt-1">
-            Pemantauan pagu tahunan, realisasi cair, dan dana dalam proses
-            persetujuan
-          </p>
+          <h1 className="font-headline text-[28px] leading-[34px] font-semibold text-[#191C1B]">Pos Anggaran</h1>
+          <p className="font-body text-[14px] leading-[20px] text-[#3F4947] mt-1">Daftar kategori belanja serta pencatatan dana terpakai dan pengajuan dalam proses.</p>
         </div>
-        {canManageBudget && <button type="button" onClick={() => { setShowAddForm(true); setFormError(''); }} className="inline-flex items-center gap-2 rounded-[8px] bg-[#00433C] text-white px-4 py-2.5 font-label text-[13px] font-semibold hover:bg-[#0F5C53]"><Plus className="w-4 h-4" /> Tambah Pos</button>}
+        {canManageBudget && <button type="button" onClick={() => { resetForm(); setShowAddForm(true); }} className="inline-flex items-center gap-2 rounded-[8px] bg-[#00433C] text-white px-4 py-2.5 font-label text-[13px] font-semibold hover:bg-[#0F5C53]"><Plus className="w-4 h-4" /> Tambah Pos</button>}
       </header>
 
-      <header className="lg:hidden sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#BEC9C6] px-4 py-3 flex items-center gap-2">
+      <header className="lg:hidden sticky top-0 z-20 bg-white border-b border-[#BEC9C6] px-4 py-3 flex items-center gap-2">
         <SchoolLogo className="w-9 h-11" />
         <div className="min-w-0">
-          <p className="font-label text-[12px] font-medium text-[#3F4947]">
-            SIT Qudwah Sungai Rengit
-          </p>
-          <h1 className="font-title text-[16px] font-semibold text-[#191C1B]">
-            Pos Anggaran
-          </h1>
+          <p className="font-label text-[12px] font-medium text-[#3F4947]">SIT Qudwah Sungai Rengit</p>
+          <h1 className="font-title text-[16px] font-semibold text-[#191C1B]">Pos Anggaran</h1>
         </div>
-        {canManageBudget && <button type="button" onClick={() => { setShowAddForm(true); setFormError(''); }} aria-label="Tambah Pos Anggaran" className="ml-auto inline-flex items-center gap-1.5 rounded-[8px] bg-[#00433C] text-white px-3 py-2 font-label text-[12px] font-semibold"><Plus className="w-4 h-4" /> Tambah</button>}
+        {canManageBudget && <button type="button" onClick={() => { resetForm(); setShowAddForm(true); }} aria-label="Tambah Pos Anggaran" className="ml-auto inline-flex items-center gap-1.5 rounded-[8px] bg-[#00433C] text-white px-3 py-2 font-label text-[12px] font-semibold"><Plus className="w-4 h-4" /> Tambah</button>}
       </header>
 
       <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 max-w-7xl w-full mx-auto flex flex-col gap-6">
         {showAddForm && canManageBudget && (
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            if (!newBudgetName.trim() || !newBudgetCode.trim() || !newBudgetUnit.trim() || !newBudgetLimit.trim()) { setFormError('Semua kolom wajib diisi.'); return; }
-            const limit = Number(newBudgetLimit);
-            if (!Number.isFinite(limit) || limit <= 0) { setFormError('Pagu tahunan harus berupa angka lebih dari 0.'); return; }
-            const payload = { name: newBudgetName.trim(), code: newBudgetCode.trim().toUpperCase(), unit: newBudgetUnit.trim(), annualLimit: limit };
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            if (!newBudgetName.trim() || !newBudgetCode.trim() || !newBudgetUnit.trim()) {
+              setFormError('Kode pos, nama pos, dan unit wajib diisi.');
+              return;
+            }
+            const existing = budgetLines.find((line) => line.id === editingBudgetId);
+            const payload = {
+              name: newBudgetName.trim(),
+              code: newBudgetCode.trim().toUpperCase(),
+              unit: newBudgetUnit.trim(),
+              annualLimit: existing?.annualLimit ?? 0,
+            };
             const result = editingBudgetId
               ? onUpdateBudgetLine(editingBudgetId, payload)
               : onAddBudgetLine(payload);
-            if (!result.ok) { setFormError(result.error || 'Gagal menyimpan pos anggaran.'); return; }
-            setNewBudgetName(''); setNewBudgetCode(''); setNewBudgetUnit(''); setNewBudgetLimit(''); setFormError(''); setShowAddForm(false); setEditingBudgetId(null);
+            if (!result.ok) {
+              setFormError(result.error || 'Gagal menyimpan pos.');
+              return;
+            }
+            resetForm();
           }} className="rounded-[12px] border border-[#BEC9C6] bg-white p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between"><h2 className="font-title text-[16px] font-semibold">{editingBudgetId ? 'Edit Pos Anggaran' : 'Tambah Pos Anggaran Baru'}</h2><button type="button" onClick={() => { setShowAddForm(false); setEditingBudgetId(null); }} aria-label="Tutup form"><X className="w-4 h-4" /></button></div>
-            {formError && <p role="alert" className="rounded-[8px] bg-[#FFDAD6] text-[#410002] px-3 py-2 text-[13px]">{formError}</p>}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <label className="flex flex-col gap-1 text-[13px] font-semibold">Kode Pos<input value={newBudgetCode} onChange={e => setNewBudgetCode(e.target.value)} placeholder="POS-5501" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
-              <label className="flex flex-col gap-1 text-[13px] font-semibold">Nama Pos Anggaran<input value={newBudgetName} onChange={e => setNewBudgetName(e.target.value)} placeholder="Contoh: Kegiatan Tahfiz" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
-              <label className="flex flex-col gap-1 text-[13px] font-semibold">Unit<input value={newBudgetUnit} onChange={e => setNewBudgetUnit(e.target.value)} placeholder="Contoh: Kesiswaan" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
-              <label className="flex flex-col gap-1 text-[13px] font-semibold">Pagu Tahunan (Rp)<input type="number" min="1" step="1" value={newBudgetLimit} onChange={e => setNewBudgetLimit(e.target.value)} placeholder="10000000" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+            <div className="flex items-center justify-between">
+              <h2 className="font-title text-[16px] font-semibold">{editingBudgetId ? 'Edit Pos Anggaran' : 'Tambah Pos Anggaran Baru'}</h2>
+              <button type="button" onClick={resetForm} aria-label="Tutup form"><X className="w-4 h-4" /></button>
             </div>
-            <div className="flex justify-end gap-2"><button type="button" onClick={() => { setShowAddForm(false); setEditingBudgetId(null); setFormError(''); }} className="rounded-[8px] border border-[#BEC9C6] px-4 py-2 text-[13px] font-semibold">Batal</button><button type="submit" className="rounded-[8px] bg-[#00433C] text-white px-4 py-2 text-[13px] font-semibold">{editingBudgetId ? 'Simpan Perubahan' : 'Simpan Pos Anggaran'}</button></div>
+            {formError && <p role="alert" className="rounded-[8px] bg-[#FFDAD6] text-[#410002] px-3 py-2 text-[13px]">{formError}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label className="flex flex-col gap-1 text-[13px] font-semibold">Kode Pos<input value={newBudgetCode} onChange={(event) => setNewBudgetCode(event.target.value)} placeholder="POS-5501" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+              <label className="flex flex-col gap-1 text-[13px] font-semibold">Nama Pos<input value={newBudgetName} onChange={(event) => setNewBudgetName(event.target.value)} placeholder="Contoh: Kegiatan Tahfiz" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+              <label className="flex flex-col gap-1 text-[13px] font-semibold">Unit<input value={newBudgetUnit} onChange={(event) => setNewBudgetUnit(event.target.value)} placeholder="Contoh: Kesiswaan" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={resetForm} className="rounded-[8px] border border-[#BEC9C6] px-4 py-2 text-[13px] font-semibold">Batal</button>
+              <button type="submit" className="rounded-[8px] bg-[#00433C] text-white px-4 py-2 text-[13px] font-semibold">Simpan Pos</button>
+            </div>
           </form>
         )}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-4 flex flex-col gap-1">
-            <span className="font-label text-[12px] font-medium text-[#3F4947]">
-              Total Pagu Tahunan
-            </span>
-            <span className="font-headline text-[22px] font-semibold text-[#191C1B] tabular-nums">
-              {formatRupiah(totals.limit)}
-            </span>
+
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="rounded-[12px] border border-[#BEC9C6] bg-white p-4 flex flex-col gap-1">
+            <span className="font-label text-[12px] font-medium text-[#3F4947]">Total Dana Terpakai</span>
+            <span className="font-headline text-[22px] font-semibold text-[#191C1B] tabular-nums">{formatRupiah(totals.used)}</span>
           </div>
-          <div className="rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-4 flex flex-col gap-1">
-            <span className="font-label text-[12px] font-medium text-[#3F4947]">
-              Terpakai &amp; Dalam Proses
-            </span>
-            <span className="font-headline text-[22px] font-semibold text-[#92400E] tabular-nums">
-              {formatRupiah(totals.used + totals.reserved)}
-            </span>
-          </div>
-          <div className="rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-4 flex flex-col gap-1">
-            <span className="font-label text-[12px] font-medium text-[#3F4947]">
-              Sisa Pagu Tersedia
-            </span>
-            <span className="font-headline text-[22px] font-semibold text-[#00433C] tabular-nums">
-              {formatRupiah(totals.remaining)}
-            </span>
+          <div className="rounded-[12px] border border-[#BEC9C6] bg-white p-4 flex flex-col gap-1">
+            <span className="font-label text-[12px] font-medium text-[#3F4947]">Total Pengajuan Dalam Proses</span>
+            <span className="font-headline text-[22px] font-semibold text-[#92400E] tabular-nums">{formatRupiah(totals.pending)}</span>
           </div>
         </section>
 
-        <section className="rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] overflow-hidden">
+        <section className="rounded-[12px] border border-[#BEC9C6] bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#BEC9C6]">
+            <h2 className="font-title text-[16px] font-semibold text-[#191C1B]">Daftar Pos dan Realisasi Dana</h2>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead className="bg-[#F2F4F2] border-b border-[#BEC9C6]">
                 <tr>
-                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947]">
-                    Kode / Pos Anggaran
-                  </th>
-                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947]">
-                    Unit
-                  </th>
-                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] text-right">
-                    Pagu Tahunan
-                  </th>
-                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] text-right">
-                    Terpakai
-                  </th>
-                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] text-right">
-                    Dalam Proses
-                  </th>
-                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] text-right">
-                    Sisa Pagu
-                  </th>
-                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] w-36">
-                    Serapan
-                  </th>
+                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947]">Kode / Pos Anggaran</th>
+                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947]">Unit</th>
+                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] text-right">Terpakai</th>
+                  <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] text-right">Dalam Proses</th>
                   {canManageBudget && <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] text-center">Aksi</th>}
                 </tr>
               </thead>
@@ -198,48 +158,18 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
                 {rows.map((row) => (
                   <tr key={row.id}>
                     <td className="px-4 py-3.5">
-                      <p className="font-mono text-[12px] text-[#3F4947]">
-                        {row.code}
-                      </p>
-                      <p className="font-title text-[14px] font-semibold text-[#191C1B]">
-                        {row.name}
-                      </p>
+                      <p className="font-mono text-[12px] text-[#3F4947]">{row.code}</p>
+                      <p className="font-title text-[14px] font-semibold text-[#191C1B]">{row.name}</p>
                     </td>
-                    <td className="px-4 py-3.5 font-body text-[14px] text-[#3F4947]">
-                      {row.unit}
-                    </td>
-                    <td className="px-4 py-3.5 font-body text-[14px] text-[#191C1B] text-right tabular-nums whitespace-nowrap">
-                      {formatRupiah(row.annualLimit)}
-                    </td>
-                    <td className="px-4 py-3.5 font-body text-[14px] text-[#3F4947] text-right tabular-nums whitespace-nowrap">
-                      {formatRupiah(row.usedAmount)}
-                    </td>
-                    <td className="px-4 py-3.5 font-body text-[14px] text-[#92400E] text-right tabular-nums whitespace-nowrap">
-                      {formatRupiah(row.pendingReserved)}
-                    </td>
-                    <td className="px-4 py-3.5 font-label text-[14px] font-semibold text-[#00433C] text-right tabular-nums whitespace-nowrap">
-                      {formatRupiah(row.remaining)}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-[#ECEEEC] overflow-hidden">
-                          <div
-                            className="h-full bg-[#00433C] rounded-full"
-                            style={{ width: `${row.usedPct}%` }}
-                          />
-                        </div>
-                        <span className="font-label text-[12px] text-[#3F4947] tabular-nums w-9 text-right">
-                          {row.usedPct}%
-                        </span>
-                      </div>
-                    </td>
+                    <td className="px-4 py-3.5 font-body text-[14px] text-[#3F4947]">{row.unit}</td>
+                    <td className="px-4 py-3.5 font-body text-[14px] text-[#191C1B] text-right tabular-nums whitespace-nowrap">{formatRupiah(row.usedAmount)}</td>
+                    <td className="px-4 py-3.5 font-body text-[14px] text-[#92400E] text-right tabular-nums whitespace-nowrap">{formatRupiah(row.pendingAmount)}</td>
                     {canManageBudget && <td className="px-4 py-3.5 text-center">
                       <button type="button" onClick={() => {
                         setEditingBudgetId(row.id);
                         setNewBudgetCode(row.code);
                         setNewBudgetName(row.name);
                         setNewBudgetUnit(row.unit);
-                        setNewBudgetLimit(String(row.annualLimit));
                         setFormError('');
                         setShowAddForm(true);
                       }} className="inline-flex items-center gap-1.5 rounded-[7px] border border-[#BEC9C6] px-3 py-2 text-[12px] font-semibold text-[#00433C] hover:bg-[#F2F4F2]" aria-label={`Edit ${row.name}`}>
@@ -248,6 +178,7 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
                     </td>}
                   </tr>
                 ))}
+                {rows.length === 0 && <tr><td colSpan={canManageBudget ? 5 : 4} className="px-4 py-8 text-center text-[13px] text-[#3F4947]">Belum ada pos anggaran.</td></tr>}
               </tbody>
             </table>
           </div>
