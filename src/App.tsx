@@ -332,6 +332,33 @@ export default function App() {
     setToastMessage('');
   };
 
+  const handleUploadRequestPdf = async (file: File, request: FundRequest): Promise<{ ok: boolean; error?: string; url?: string }> => {
+    if (!supabase) return { ok: false, error: 'Koneksi Supabase belum tersedia.' };
+    if (file.type !== 'application/pdf') return { ok: false, error: 'Pilih file PDF.' };
+    if (file.size > 10 * 1024 * 1024) return { ok: false, error: 'Ukuran PDF maksimal 10 MB.' };
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        resolve(result.split(',')[1] || '');
+      };
+      reader.onerror = () => reject(new Error('File PDF tidak dapat dibaca.'));
+      reader.readAsDataURL(file);
+    });
+    const safeCode = request.code.replace(/[^a-zA-Z0-9-_]/g, '_');
+    const datePart = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase.functions.invoke('upload-request-pdf', {
+      body: {
+        fileName: `Pengajuan_${safeCode}_${datePart}.pdf`,
+        mimeType: 'application/pdf',
+        fileBase64: base64,
+        requestCode: request.code,
+      },
+    });
+    if (error || data?.error) return { ok: false, error: data?.error || error?.message || 'Upload gagal.' };
+    return { ok: true, url: data?.file?.webViewLink };
+  };
+
   const handleAddAccount = async (payload: {
     name: string;
     role: RoleId;
@@ -984,6 +1011,7 @@ export default function App() {
               onRequestRevision={handleRequestRevision}
               onResubmit={handleResubmit}
               onUpdateRevision={handleUpdateRevision}
+              onUploadPdf={(file) => handleUploadRequestPdf(file, activeRequest)}
             />
           ) : (
             <div className="flex-1 px-4 lg:px-8 py-12 max-w-2xl w-full mx-auto flex flex-col items-center justify-center text-center gap-3">
