@@ -17,7 +17,7 @@ interface SchoolLogoProps {
 }
 
 export function SchoolLogo({ className = 'w-10 h-12' }: SchoolLogoProps) {
-  const [customLogo, setCustomLogo] = useState<string>(readCustomLogo);
+  const [, setCustomLogo] = useState<string>(readCustomLogo);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export function SchoolLogo({ className = 'w-10 h-12' }: SchoolLogoProps) {
     };
   }, []);
 
-  const logoSource = customLogo || SIT_QUDWAH_LOGO_URL;
+  const logoSource = SIT_QUDWAH_LOGO_URL;
 
   if (hasError) {
     return (
