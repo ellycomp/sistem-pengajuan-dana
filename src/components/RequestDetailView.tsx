@@ -1043,7 +1043,7 @@ export function RequestDetailView({
                 SIT Qudwah Sungai Rengit
               </h1>
               <p className="font-body text-[12px] text-[#3F4947]">
-                Sistem Pengajuan &amp; Persetujuan Dana Sekolah (KasSekolah)
+                Sistem Pengajuan Dana Sekolah
               </p>
             </div>
           </div>
