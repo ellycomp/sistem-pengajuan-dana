@@ -577,14 +577,22 @@ export function RequestDetailView({
       )}
 
       {request.status === 'revisi' && (
-        <footer className="no-print lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 bg-[#FFFFFF] border-t border-[#BEC9C6] p-3">
+        <footer className="no-print lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 bg-[#FFFFFF] border-t border-[#BEC9C6] p-3 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => { setRevisionTitle(request.title); setRevisionTargetDate(request.targetDate); setRevisionAttachment(request.attachmentName); setRevisionItems(request.items.map((item) => ({ ...item }))); setShowRevisionEditor(true); }}
+            className="w-full inline-flex items-center justify-center gap-1 rounded-[8px] border border-[#00433C] text-[#00433C] bg-white px-3 py-2.5 font-label text-[13px] font-semibold"
+          >
+            <FileEdit className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>Revisi</span>
+          </button>
           <button
             type="button"
             onClick={() => onResubmit(request.id)}
-            className="w-full inline-flex items-center justify-center gap-1.5 rounded-[8px] bg-[#00433C] text-[#FFFFFF] px-4 py-2.5 font-label text-[14px] font-semibold"
+            className="w-full inline-flex items-center justify-center gap-1 rounded-[8px] bg-[#00433C] text-[#FFFFFF] px-3 py-2.5 font-label text-[13px] font-semibold"
           >
             <RotateCcw className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>Ajukan Ulang Pengajuan</span>
+            <span>Ajukan Ulang</span>
           </button>
         </footer>
       )}
