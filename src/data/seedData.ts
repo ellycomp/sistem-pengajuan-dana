@@ -61,44 +61,14 @@ export const ROLE_USERS: Record<RoleId, UserProfile> = {
 
 export const INITIAL_ACCOUNTS: UserAccount[] = [
   {
-    id: 'acc-guru',
-    ...ROLE_USERS.guru,
-    password: 'qudwah2026',
-    isDefault: true,
-  },
-  {
-    id: 'acc-sarana',
-    ...ROLE_USERS.sarana,
-    password: 'qudwah2026',
-    isDefault: true,
-  },
-  {
-    id: 'acc-bendahara-sekolah',
-    ...ROLE_USERS['bendahara-sekolah'],
-    password: 'qudwah2026',
-    isDefault: true,
-  },
-  {
-    id: 'acc-umi-laila-sari',
-    role: 'bendahara-sekolah',
-    name: 'Umi Laila Sari',
-    title: 'Pengganti Bendahara Sekolah',
-    avatar: 'UL',
-    email: 'umi.laila.sari@sitqudwah.sch.id',
-    unit: 'Keuangan Unit',
-    password: 'qudwah2026',
-    isDefault: true,
-  },
-  {
-    id: 'acc-bendahara-umum',
-    ...ROLE_USERS['bendahara-umum'],
-    password: 'qudwah2026',
-    isDefault: true,
-  },
-  {
     id: 'acc-direktur',
-    ...ROLE_USERS.direktur,
-    password: 'Sung@irengit20',
+    role: 'direktur',
+    name: 'Elly Sumantri, S.Pd.',
+    title: 'Direktur SIT Qudwah Sungai Rengit',
+    avatar: 'ES',
+    email: 'ellysumantri86@gmail.com',
+    unit: 'Pimpinan Yayasan',
+    password: '',
     isDefault: true,
   },
 ];
