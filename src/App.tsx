@@ -104,7 +104,8 @@ function loadInitialState(): PersistedState {
 
 export default function App() {
   const [initial] = useState<PersistedState>(() => loadInitialState());
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(initial.isLoggedIn);
+  // Supabase session is the source of truth; never trust a cached localStorage login flag.
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [accounts, setAccounts] = useState<UserAccount[]>(initial.accounts);
   const [currentAccountId, setCurrentAccountId] = useState<string>(
     initial.currentAccountId
@@ -132,6 +133,83 @@ export default function App() {
     currentRole === 'guru' ? 'sarana' : currentRole
   );
   const [toastMessage, setToastMessage] = useState<string>('');
+
+  // Restore a real Supabase session after refresh and keep app state in sync with Auth.
+  useEffect(() => {
+    if (!supabase) {
+      setIsLoggedIn(false);
+      return;
+    }
+
+    let active = true;
+    const loadAuthenticatedProfile = async (userId: string) => {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, name, email, role, title, unit, avatar')
+        .eq('id', userId)
+        .single();
+
+      if (!active) return;
+      if (error || !profile) {
+        setIsLoggedIn(false);
+        setToastMessage('Sesi ditemukan, tetapi profil pengguna tidak dapat dibaca. Hubungi pengelola.');
+        await supabase.auth.signOut();
+        return;
+      }
+
+      const account: UserAccount = {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        title: profile.title,
+        unit: profile.unit,
+        avatar: profile.avatar || makeAvatarInitials(profile.name),
+        password: '',
+        isDefault: false,
+      };
+      setAccounts((previous) =>
+        previous.some((item) => item.id === account.id)
+          ? previous.map((item) => item.id === account.id ? account : item)
+          : [...previous, account]
+      );
+      setCurrentAccountId(account.id);
+      setIsLoggedIn(true);
+      setActiveTab(account.role === 'guru' ? 'pengajuan' : 'persetujuan');
+      if (account.role !== 'guru' && account.role !== 'direktur') {
+        setSelectedTier(account.role);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        setIsLoggedIn(false);
+        setToastMessage('Tidak dapat memulihkan sesi. Silakan masuk kembali.');
+        return;
+      }
+      if (data.session?.user) {
+        void loadAuthenticatedProfile(data.session.user.id);
+      } else {
+        setIsLoggedIn(false);
+      }
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        if (active) setIsLoggedIn(false);
+        return;
+      }
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        void loadAuthenticatedProfile(session.user.id);
+      }
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     try {
