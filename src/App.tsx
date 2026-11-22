@@ -295,7 +295,7 @@ export default function App() {
   const handleApproveStage = (requestId: string, note: string) => {
     const targetRequest = requests.find((req) => req.id === requestId);
     const activeStage = targetRequest?.stages.find((stage) => stage.step === targetRequest.currentStageStep);
-    if (!targetRequest || targetRequest.status !== 'diproses' || activeStage?.personName !== currentUser.name) {
+    if (!targetRequest || currentUser.role === 'guru' || targetRequest.status !== 'diproses' || activeStage?.personName !== currentUser.name) {
       setToastMessage('Anda tidak memiliki wewenang untuk memeriksa tahap pengajuan ini. Pengajuan harus diperiksa oleh petugas pada jenjang yang sedang aktif.');
       return;
     }
@@ -369,7 +369,7 @@ export default function App() {
   const handleRequestRevision = (requestId: string, note: string) => {
     const targetRequest = requests.find((req) => req.id === requestId);
     const activeStage = targetRequest?.stages.find((stage) => stage.step === targetRequest.currentStageStep);
-    if (!targetRequest || targetRequest.status !== 'diproses' || activeStage?.personName !== currentUser.name) {
+    if (!targetRequest || currentUser.role === 'guru' || targetRequest.status !== 'diproses' || activeStage?.personName !== currentUser.name) {
       setToastMessage('Anda tidak memiliki wewenang untuk meminta revisi pada tahap ini.');
       return;
     }
