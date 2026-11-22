@@ -554,6 +554,33 @@ export default function App() {
     return { ok: true };
   };
 
+  const handleUpdateBudgetLine = (id: string, payload: Omit<BudgetLine, 'id' | 'usedAmount'>): { ok: boolean; error?: string } => {
+    if (currentUser.role !== 'direktur' && currentUser.role !== 'bendahara-umum') {
+      return { ok: false, error: 'Hanya Direktur atau Bendahara Umum yang dapat mengubah pos anggaran.' };
+    }
+    const existing = budgetLines.find((line) => line.id === id);
+    if (!existing) return { ok: false, error: 'Pos anggaran tidak ditemukan.' };
+    const duplicate = budgetLines.some(
+      (line) => line.id !== id && (
+        line.code.toLowerCase() === payload.code.toLowerCase() ||
+        line.name.toLowerCase() === payload.name.toLowerCase()
+      )
+    );
+    if (duplicate) return { ok: false, error: 'Kode atau nama pos anggaran sudah digunakan oleh pos lain.' };
+    if (payload.annualLimit < existing.usedAmount) {
+      return { ok: false, error: 'Pagu tahunan tidak boleh lebih kecil dari dana yang sudah terpakai.' };
+    }
+    const pendingAmount = requests
+      .filter((request) => request.budgetCategoryId === id && request.status === 'diproses')
+      .reduce((sum, request) => sum + calculateRequestTotal(request.items), 0);
+    if (payload.annualLimit < existing.usedAmount + pendingAmount) {
+      return { ok: false, error: 'Pagu tahunan tidak boleh lebih kecil dari dana yang sedang dalam proses.' };
+    }
+    setBudgetLines((prev) => prev.map((line) => line.id === id ? { ...line, ...payload } : line));
+    setToastMessage(`Pos anggaran "${payload.name}" berhasil diperbarui.`);
+    return { ok: true };
+  };
+
   const handleResetData = () => {
     setRequests(INITIAL_REQUESTS);
     setBudgetLines(INITIAL_BUDGET_LINES);
@@ -688,7 +715,7 @@ export default function App() {
           ))}
 
         {activeTab === 'anggaran' && (
-          <BudgetView budgetLines={budgetLines} requests={requests} currentUser={currentUser} onAddBudgetLine={handleAddBudgetLine} />
+          <BudgetView budgetLines={budgetLines} requests={requests} currentUser={currentUser} onAddBudgetLine={handleAddBudgetLine} onUpdateBudgetLine={handleUpdateBudgetLine} />
         )}
 
         {activeTab === 'riwayat' && (
