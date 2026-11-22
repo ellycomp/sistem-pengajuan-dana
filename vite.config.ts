@@ -5,7 +5,8 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
-  return {/sistem-pengajuan-dana/
+  return {
+    base: '/sistem-pengajuan-dana/',
     plugins: [
       react(),
       tailwindcss(),
