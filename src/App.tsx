@@ -739,6 +739,7 @@ export default function App() {
             <RequestDetailView
               request={activeRequest}
               currentRole={currentRole}
+              currentUserName={currentUser.name}
               onBack={() => setActiveTab('pengajuan')}
               onApproveStage={handleApproveStage}
               onRequestRevision={handleRequestRevision}
