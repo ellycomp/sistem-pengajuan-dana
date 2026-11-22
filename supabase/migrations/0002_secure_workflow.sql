@@ -76,6 +76,32 @@ begin
 
   for v_stage in select value from jsonb_array_elements(p_stages)
   loop
+    -- Stage identity and role must match a real profile; clients cannot assign
+    -- themselves a fabricated reviewer or alter the approval chain.
+    if (v_stage->>'step')::integer = 1 then
+      if (v_stage->>'roleKey') <> 'guru'
+         or (v_stage->>'personName') <> v_profile.name then
+        raise exception 'Tahap pengaju tidak valid.';
+      end if;
+    elsif (v_stage->>'step')::integer between 2 and 5 then
+      if (v_stage->>'roleKey')::public.app_role <>
+         case (v_stage->>'step')::integer
+           when 2 then 'sarana'::public.app_role
+           when 3 then 'bendahara-sekolah'::public.app_role
+           when 4 then 'bendahara-umum'::public.app_role
+           when 5 then 'direktur'::public.app_role
+         end
+         or not exists (
+           select 1 from public.profiles p
+           where p.role = (v_stage->>'roleKey')::public.app_role
+             and lower(p.name) = lower(v_stage->>'personName')
+         ) then
+        raise exception 'Petugas tahap persetujuan tidak valid atau belum memiliki akun.';
+      end if;
+    else
+      raise exception 'Nomor tahap persetujuan tidak valid.';
+    end if;
+
     insert into public.approval_stages(
       request_id, step, role_key, role_label, person_name, person_title,
       state, note, timestamp_label
