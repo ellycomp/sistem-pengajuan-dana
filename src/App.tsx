@@ -402,6 +402,20 @@ export default function App() {
     }
   };
 
+  const handleUpdateRevision = (
+    requestId: string,
+    updates: Pick<FundRequest, 'title' | 'targetDate' | 'attachmentName' | 'items'>
+  ) => {
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === requestId && req.status === 'revisi'
+          ? { ...req, ...updates }
+          : req
+      )
+    );
+    setToastMessage('Perbaikan pengajuan berhasil disimpan. Silakan ajukan ulang setelah selesai.');
+  };
+
   const handleResubmit = (requestId: string) => {
     const timestamp = formatCurrentTimestamp();
     let title = '';
@@ -712,6 +726,7 @@ export default function App() {
               onApproveStage={handleApproveStage}
               onRequestRevision={handleRequestRevision}
               onResubmit={handleResubmit}
+              onUpdateRevision={handleUpdateRevision}
             />
           ) : (
             <div className="flex-1 px-4 lg:px-8 py-12 max-w-2xl w-full mx-auto flex flex-col items-center justify-center text-center gap-3">
