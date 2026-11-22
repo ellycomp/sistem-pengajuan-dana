@@ -535,6 +535,25 @@ export default function App() {
     setToastMessage(`Pengajuan ${code} berhasil dikirim ke Kasi Sarana.`);
   };
 
+  const handleAddBudgetLine = (payload: Omit<BudgetLine, 'id' | 'usedAmount'>): { ok: boolean; error?: string } => {
+    if (currentUser.role !== 'direktur' && currentUser.role !== 'bendahara-umum') {
+      return { ok: false, error: 'Hanya Direktur atau Bendahara Umum yang dapat menambahkan pos anggaran.' };
+    }
+    const duplicate = budgetLines.some(
+      (line) => line.code.toLowerCase() === payload.code.toLowerCase() ||
+        line.name.toLowerCase() === payload.name.toLowerCase()
+    );
+    if (duplicate) return { ok: false, error: 'Kode atau nama pos anggaran sudah digunakan.' };
+    const newLine: BudgetLine = {
+      ...payload,
+      id: `budget-${Date.now()}`,
+      usedAmount: 0,
+    };
+    setBudgetLines((prev) => [...prev, newLine]);
+    setToastMessage(`Pos anggaran "${newLine.name}" berhasil ditambahkan.`);
+    return { ok: true };
+  };
+
   const handleResetData = () => {
     setRequests(INITIAL_REQUESTS);
     setBudgetLines(INITIAL_BUDGET_LINES);
@@ -669,7 +688,7 @@ export default function App() {
           ))}
 
         {activeTab === 'anggaran' && (
-          <BudgetView budgetLines={budgetLines} requests={requests} />
+          <BudgetView budgetLines={budgetLines} requests={requests} currentUser={currentUser} onAddBudgetLine={handleAddBudgetLine} />
         )}
 
         {activeTab === 'riwayat' && (
