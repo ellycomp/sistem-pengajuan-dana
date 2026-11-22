@@ -418,6 +418,11 @@ export default function App() {
     requestId: string,
     updates: Pick<FundRequest, 'title' | 'targetDate' | 'attachmentName' | 'items'>
   ) => {
+    const targetRequest = requests.find((req) => req.id === requestId);
+    if (!targetRequest || targetRequest.status !== 'revisi' || targetRequest.requesterName !== currentUser.name) {
+      setToastMessage('Hanya pengaju yang bersangkutan yang dapat mengubah pengajuan revisi.');
+      return;
+    }
     setRequests((prev) =>
       prev.map((req) =>
         req.id === requestId && req.status === 'revisi'
