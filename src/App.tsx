@@ -221,26 +221,38 @@ export default function App() {
         })));
       }
 
-      const account: UserAccount = {
+      const { data: profileRows, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, email, role, title, unit, avatar')
+        .order('name');
+      if (profilesError) {
+        setToastMessage(`Daftar petugas belum dapat dimuat: ${profilesError.message}`);
+      }
+      const visibleProfiles = (profileRows || [profile]).map((row: any): UserAccount => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        role: row.role,
+        title: row.title || '',
+        unit: row.unit || '',
+        avatar: row.avatar || makeAvatarInitials(row.name),
+        password: '',
+        isDefault: false,
+      }));
+      const account: UserAccount = visibleProfiles.find((item) => item.id === profile.id) || {
         id: profile.id,
         name: profile.name,
         email: profile.email,
         role: profile.role,
-        title: profile.title,
-        unit: profile.unit,
+        title: profile.title || '',
+        unit: profile.unit || '',
         avatar: profile.avatar || makeAvatarInitials(profile.name),
         password: '',
         isDefault: false,
       };
-      // Match by Auth ID OR email so the local seed director and Supabase
-      // profile are merged into one visible account.
-      setAccounts((previous) => [
-        ...previous.filter((item) =>
-          item.id !== account.id &&
-          item.email?.toLowerCase() !== account.email.toLowerCase()
-        ),
-        account,
-      ]);
+      // Keep all active staff profiles available so routing can select a real,
+      // non-requesting reviewer with the required role.
+      setAccounts(visibleProfiles);
       setCurrentAccountId(account.id);
       setIsLoggedIn(true);
       setActiveTab(account.role === 'guru' ? 'pengajuan' : 'persetujuan');
@@ -744,19 +756,27 @@ export default function App() {
     const shortDate = timestamp.split(',')[0];
     const budget = budgetLines.find((b) => b.id === payload.budgetCategoryId);
 
-    const saranaAcc = accounts.find((a) => a.role === 'sarana');
-    const bendSekAcc = accounts.find((a) => a.role === 'bendahara-sekolah' && a.id !== 'acc-umi-laila-sari');
-    const bendUmumAcc = accounts.find((a) => a.role === 'bendahara-umum');
-    const direkturAcc = accounts.find((a) => a.role === 'direktur');
-    const umiLailaAcc = accounts.find((a) => a.id === 'acc-umi-laila-sari');
-    const requestByEka = currentUser.name === 'Eka Priyana';
-    const requestByRosyidatul = currentUser.name === 'Rosyidatul Alyah';
-    const stageTwoReviewer = requestByEka
-      ? accounts.find((a) => a.name === 'Rosyidatul Alyah') || saranaAcc
-      : saranaAcc;
-    const stageThreeReviewer = requestByEka || requestByRosyidatul
-      ? umiLailaAcc || bendSekAcc
-      : bendSekAcc;
+    const findOtherReviewer = (role: RoleId) =>
+      accounts.find((account) => account.role === role && account.id !== currentUser.id);
+    // Each approval step must be assigned to a real account with that step's
+    // role. If the requester occupies that role, a second account of the same
+    // role is required so nobody can approve their own request.
+    const stageTwoReviewer = findOtherReviewer('sarana');
+    const stageThreeReviewer = findOtherReviewer('bendahara-sekolah');
+    const bendUmumAcc = findOtherReviewer('bendahara-umum');
+    const direkturAcc = findOtherReviewer('direktur');
+    const missingReviewer = [
+      !stageTwoReviewer && 'Kepala Seksi Sarana',
+      !stageThreeReviewer && 'Bendahara Sekolah',
+      !bendUmumAcc && 'Bendahara Umum',
+      !direkturAcc && 'Direktur',
+    ].filter(Boolean);
+    if (missingReviewer.length) {
+      setToastMessage(
+        `Pengajuan belum dapat dikirim. Akun pemeriksa aktif belum tersedia untuk: ${missingReviewer.join(', ')}. Jika pengaju merangkap jabatan tersebut, buat akun petugas pengganti dengan jabatan yang sama terlebih dahulu.`
+      );
+      return;
+    }
 
     const newReq: FundRequest = {
       id: `req-${Date.now()}`,
@@ -791,8 +811,8 @@ export default function App() {
           step: 2,
           roleKey: 'sarana',
           roleLabel: '2. Kepala Seksi Sarana',
-          personName: stageTwoReviewer?.name || 'Eka Priyana',
-          personTitle: requestByEka ? 'Pengganti Kepala Seksi Sarana' : (stageTwoReviewer?.title || 'Kepala Seksi Sarana'),
+          personName: stageTwoReviewer!.name,
+          personTitle: stageTwoReviewer!.title || 'Kepala Seksi Sarana',
           state: 'active',
           note: 'Sedang memverifikasi stok & kebutuhan unit',
         },
@@ -800,8 +820,8 @@ export default function App() {
           step: 3,
           roleKey: 'bendahara-sekolah',
           roleLabel: '3. Bendahara Sekolah',
-          personName: stageThreeReviewer?.name || 'Rosyidatul Alyah',
-          personTitle: (requestByEka || requestByRosyidatul) ? 'Pengganti Bendahara Sekolah' : (stageThreeReviewer?.title || 'Bendahara Sekolah'),
+          personName: stageThreeReviewer!.name,
+          personTitle: stageThreeReviewer!.title || 'Bendahara Sekolah',
           state: 'pending',
           note: 'Menunggu persetujuan Kasi Sarana',
         },
@@ -809,8 +829,8 @@ export default function App() {
           step: 4,
           roleKey: 'bendahara-umum',
           roleLabel: '4. Bendahara Umum',
-          personName: bendUmumAcc?.name || 'Pak Ridwan Kamil',
-          personTitle: bendUmumAcc?.title || 'Bendahara Umum',
+          personName: bendUmumAcc!.name,
+          personTitle: bendUmumAcc!.title || 'Bendahara Umum',
           state: 'pending',
           note: 'Menunggu penerusan dari Bendahara Sekolah',
         },
@@ -818,8 +838,8 @@ export default function App() {
           step: 5,
           roleKey: 'direktur',
           roleLabel: '5. Direktur SIT Qudwah Sungai Rengit',
-          personName: direkturAcc?.name || 'Ust. H. Darmawan',
-          personTitle: direkturAcc?.title || 'Direktur SIT Qudwah',
+          personName: direkturAcc!.name,
+          personTitle: direkturAcc!.title || 'Direktur SIT Qudwah',
           state: 'pending',
           note: 'Persetujuan akhir & otorisasi pencairan dana',
         },
@@ -853,7 +873,7 @@ export default function App() {
     setRequests((prev) => [newReq, ...prev]);
     setSelectedRequestId(newReq.id);
     setActiveTab('detail');
-    setToastMessage(`Pengajuan ${code} berhasil dikirim ke Kasi Sarana.`);
+    setToastMessage(`Pengajuan ${code} berhasil dikirim ke ${stageTwoReviewer!.name} (Kepala Seksi Sarana).`);
   };
 
   const handleAddBudgetLine = (payload: Omit<BudgetLine, 'id' | 'usedAmount'>): { ok: boolean; error?: string } => {
