@@ -35,11 +35,13 @@ interface BudgetViewProps {
   requests: FundRequest[];
   currentUser: UserProfile;
   onAddBudgetLine: (payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => { ok: boolean; error?: string };
+  onUpdateBudgetLine: (id: string, payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => { ok: boolean; error?: string };
 }
 
-export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine }: BudgetViewProps) {
+export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine, onUpdateBudgetLine }: BudgetViewProps) {
   const canManageBudget = currentUser.role === 'direktur' || currentUser.role === 'bendahara-umum';
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const [newBudgetName, setNewBudgetName] = useState('');
   const [newBudgetCode, setNewBudgetCode] = useState('');
   const [newBudgetUnit, setNewBudgetUnit] = useState('');
@@ -118,11 +120,14 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
             if (!newBudgetName.trim() || !newBudgetCode.trim() || !newBudgetUnit.trim() || !newBudgetLimit.trim()) { setFormError('Semua kolom wajib diisi.'); return; }
             const limit = Number(newBudgetLimit);
             if (!Number.isFinite(limit) || limit <= 0) { setFormError('Pagu tahunan harus berupa angka lebih dari 0.'); return; }
-            const result = onAddBudgetLine({ name: newBudgetName.trim(), code: newBudgetCode.trim().toUpperCase(), unit: newBudgetUnit.trim(), annualLimit: limit });
-            if (!result.ok) { setFormError(result.error || 'Gagal menambahkan pos anggaran.'); return; }
-            setNewBudgetName(''); setNewBudgetCode(''); setNewBudgetUnit(''); setNewBudgetLimit(''); setFormError(''); setShowAddForm(false);
+            const payload = { name: newBudgetName.trim(), code: newBudgetCode.trim().toUpperCase(), unit: newBudgetUnit.trim(), annualLimit: limit };
+            const result = editingBudgetId
+              ? onUpdateBudgetLine(editingBudgetId, payload)
+              : onAddBudgetLine(payload);
+            if (!result.ok) { setFormError(result.error || 'Gagal menyimpan pos anggaran.'); return; }
+            setNewBudgetName(''); setNewBudgetCode(''); setNewBudgetUnit(''); setNewBudgetLimit(''); setFormError(''); setShowAddForm(false); setEditingBudgetId(null);
           }} className="rounded-[12px] border border-[#BEC9C6] bg-white p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between"><h2 className="font-title text-[16px] font-semibold">Tambah Pos Anggaran Baru</h2><button type="button" onClick={() => setShowAddForm(false)} aria-label="Tutup form"><X className="w-4 h-4" /></button></div>
+            <div className="flex items-center justify-between"><h2 className="font-title text-[16px] font-semibold">{editingBudgetId ? 'Edit Pos Anggaran' : 'Tambah Pos Anggaran Baru'}</h2><button type="button" onClick={() => { setShowAddForm(false); setEditingBudgetId(null); }} aria-label="Tutup form"><X className="w-4 h-4" /></button></div>
             {formError && <p role="alert" className="rounded-[8px] bg-[#FFDAD6] text-[#410002] px-3 py-2 text-[13px]">{formError}</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <label className="flex flex-col gap-1 text-[13px] font-semibold">Kode Pos<input value={newBudgetCode} onChange={e => setNewBudgetCode(e.target.value)} placeholder="POS-5501" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
@@ -130,7 +135,7 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
               <label className="flex flex-col gap-1 text-[13px] font-semibold">Unit<input value={newBudgetUnit} onChange={e => setNewBudgetUnit(e.target.value)} placeholder="Contoh: Kesiswaan" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
               <label className="flex flex-col gap-1 text-[13px] font-semibold">Pagu Tahunan (Rp)<input type="number" min="1" step="1" value={newBudgetLimit} onChange={e => setNewBudgetLimit(e.target.value)} placeholder="10000000" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
             </div>
-            <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowAddForm(false)} className="rounded-[8px] border border-[#BEC9C6] px-4 py-2 text-[13px] font-semibold">Batal</button><button type="submit" className="rounded-[8px] bg-[#00433C] text-white px-4 py-2 text-[13px] font-semibold">Simpan Pos Anggaran</button></div>
+            <div className="flex justify-end gap-2"><button type="button" onClick={() => { setShowAddForm(false); setEditingBudgetId(null); setFormError(''); }} className="rounded-[8px] border border-[#BEC9C6] px-4 py-2 text-[13px] font-semibold">Batal</button><button type="submit" className="rounded-[8px] bg-[#00433C] text-white px-4 py-2 text-[13px] font-semibold">{editingBudgetId ? 'Simpan Perubahan' : 'Simpan Pos Anggaran'}</button></div>
           </form>
         )}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -186,6 +191,7 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
                   <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] w-36">
                     Serapan
                   </th>
+                  {canManageBudget && <th className="px-4 py-3 font-label text-[12px] font-semibold text-[#3F4947] text-center">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#BEC9C6]">
@@ -227,6 +233,19 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
                         </span>
                       </div>
                     </td>
+                    {canManageBudget && <td className="px-4 py-3.5 text-center">
+                      <button type="button" onClick={() => {
+                        setEditingBudgetId(row.id);
+                        setNewBudgetCode(row.code);
+                        setNewBudgetName(row.name);
+                        setNewBudgetUnit(row.unit);
+                        setNewBudgetLimit(String(row.annualLimit));
+                        setFormError('');
+                        setShowAddForm(true);
+                      }} className="inline-flex items-center gap-1.5 rounded-[7px] border border-[#BEC9C6] px-3 py-2 text-[12px] font-semibold text-[#00433C] hover:bg-[#F2F4F2]" aria-label={`Edit ${row.name}`}>
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </button>
+                    </td>}
                   </tr>
                 ))}
               </tbody>
