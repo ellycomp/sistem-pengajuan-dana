@@ -1,0 +1,8 @@
+{
+  "appId": "org.sitqudwah.pengajuandana",
+  "appName": "Pengajuan Dana SIT Qudwah",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
