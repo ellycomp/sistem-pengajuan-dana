@@ -24,9 +24,9 @@ begin
   end if;
   if exists (
     select 1 from public.budget_lines
-    where lower(name) = lower(trim(p_name))
-       or lower(code) = lower(trim(p_code))
-      and id <> coalesce(p_id,'')
+    where id <> coalesce(p_id,'')
+      and (lower(name) = lower(trim(p_name))
+       or lower(code) = lower(trim(p_code)))
   ) then
     raise exception 'Kode atau nama pos anggaran sudah digunakan.';
   end if;
