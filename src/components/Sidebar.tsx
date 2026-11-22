@@ -40,7 +40,7 @@ export function DesktopSidebar({
           <SchoolLogo className="w-10 h-12" />
           <div className="min-w-0">
             <p className="font-title text-[16px] leading-[22px] font-semibold text-[#191C1B] truncate">
-              KasSekolah
+              Sistem Pengajuan Dana
             </p>
             <p className="font-label text-[12px] leading-[16px] tracking-[0.2px] font-medium text-[#3F4947] truncate">
               SIT Qudwah Sungai Rengit
