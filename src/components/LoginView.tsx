@@ -491,7 +491,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
             {resetMessage && <p role="status" className="text-sm text-[#3F4947] break-words">{resetMessage}</p>}
           </div>
         </div>
-      )}}
+      )}
     </div>
   );
 }
