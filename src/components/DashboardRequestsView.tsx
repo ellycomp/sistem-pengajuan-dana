@@ -29,6 +29,7 @@ interface DashboardRequestsViewProps {
   currentUser: UserProfile;
   onOpenDetail: (requestId: string) => void;
   onCreateRequest: (payload: {
+    requesterRole: string;
     title: string;
     schoolUnit: SchoolUnit;
     budgetCategoryId: string;
@@ -54,6 +55,12 @@ export function DashboardRequestsView({
     'all'
   );
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const requesterRoleOptions = currentUser.name === 'Rosyidatul Alyah'
+    ? ['Wali Kelas 1', 'Wakil Bidang Akademik']
+    : currentUser.name === 'Eka Priyana'
+    ? ['Guru Kelas PAUD', 'Wakil Bidang Sarpras']
+    : [currentUser.title];
+  const [requesterRole, setRequesterRole] = useState<string>(requesterRoleOptions[0]);
 
   // Create form state
   const [title, setTitle] = useState<string>('');
@@ -161,6 +168,7 @@ export function DashboardRequestsView({
     }
 
     onCreateRequest({
+      requesterRole,
       title: title.trim(),
       schoolUnit,
       budgetCategoryId,
@@ -604,6 +612,23 @@ export function DashboardRequestsView({
                   placeholder="Contoh: Pembelian Modul Ajar Semester Genap"
                   className="w-full rounded-[8px] border border-[#BEC9C6] px-3 py-2 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
                 />
+              </div>
+
+              <div className="sm:col-span-2 flex flex-col gap-1">
+                <label
+                  htmlFor="req-requester-role"
+                  className="font-label text-[13px] font-semibold text-[#191C1B]"
+                >
+                  Mengajukan Sebagai
+                </label>
+                <select
+                  id="req-requester-role"
+                  value={requesterRole}
+                  onChange={(e) => setRequesterRole(e.target.value)}
+                  className="w-full rounded-[8px] border border-[#BEC9C6] bg-[#FFFFFF] px-3 py-2 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
+                >
+                  {requesterRoleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
+                </select>
               </div>
 
               <div className="sm:col-span-2 flex flex-col gap-1">
