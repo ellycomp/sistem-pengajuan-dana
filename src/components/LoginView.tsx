@@ -99,7 +99,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
     e.preventDefault();
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
-      setErrorMsg('Silakan masukkan email sekolah atau NIP pegawai.');
+      setErrorMsg('Silakan masukkan email sekolah atau NIY pegawai.');
       return;
     }
     if (!password) {
@@ -266,7 +266,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
                   htmlFor="web-email"
                   className="font-label text-[14px] leading-[20px] font-semibold text-[#191C1B]"
                 >
-                  Email atau NIP
+                  Email atau NIY
                 </label>
                 <input
                   id="web-email"
@@ -409,7 +409,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
                 htmlFor="mob-email"
                 className="font-label text-[14px] leading-[20px] font-semibold text-[#191C1B]"
               >
-                Email atau NIP
+                Email atau NIY
               </label>
               <input
                 id="mob-email"
