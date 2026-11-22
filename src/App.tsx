@@ -638,15 +638,6 @@ export default function App() {
       )
     );
     if (duplicate) return { ok: false, error: 'Kode atau nama pos anggaran sudah digunakan oleh pos lain.' };
-    if (payload.annualLimit < existing.usedAmount) {
-      return { ok: false, error: 'Pagu tahunan tidak boleh lebih kecil dari dana yang sudah terpakai.' };
-    }
-    const pendingAmount = requests
-      .filter((request) => request.budgetCategoryId === id && request.status === 'diproses')
-      .reduce((sum, request) => sum + calculateRequestTotal(request.items), 0);
-    if (payload.annualLimit < existing.usedAmount + pendingAmount) {
-      return { ok: false, error: 'Pagu tahunan tidak boleh lebih kecil dari dana yang sedang dalam proses.' };
-    }
     setBudgetLines((prev) => prev.map((line) => line.id === id ? { ...line, ...payload } : line));
     setToastMessage(`Pos anggaran "${payload.name}" berhasil diperbarui.`);
     return { ok: true };
