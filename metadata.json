@@ -1,0 +1,6 @@
+{
+  "name": "KasSekolah — SIT Qudwah Sungai Rengit",
+  "description": "Portal pengajuan dana belanja sekolah dan persetujuan berjenjang 5 tahap untuk SIT Qudwah Sungai Rengit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  --color-success: #166534;
+  --color-on-success: #FFFFFF;
+  --color-success-container: #DCFCE7;
+  --color-on-success-container: #14532D;
+
+  --color-warning: #92400E;
+  --color-on-warning: #FFFFFF;
+  --color-warning-container: #FEF3C7;
+  --color-on-warning-container: #78350F;
+
+  --color-light-primary: #00433C;
+  --color-light-on-primary: #FFFFFF;
+  --color-light-primary-container: #0F5C53;
+  --color-light-on-primary-container: #FFFFFF;
+
+  --color-light-secondary: #4B635E;
+  --color-light-on-secondary: #FFFFFF;
+  --color-light-secondary-container: #CDE8E2;
+  --color-light-on-secondary-container: #1D3531;
+
+  --color-light-tertiary: #5F2D1B;
+  --color-on-tertiary: #FFFFFF;
+  --color-light-tertiary-container: #FFDBD0;
+  --color-light-on-tertiary-container: #370E02;
+
+  --color-light-error: #BA1A1A;
+  --color-light-on-error: #FFFFFF;
+  --color-light-error-container: #FFDAD6;
+  --color-on-error-container: #410002;
+
+  --color-light-background: #F8FAF8;
+  --color-light-on-background: #191C1B;
+  --color-light-surface: #F8FAF8;
+  --color-light-surface-dim: #D8DBD9;
+  --color-light-surface-bright: #FFFFFF;
+  --color-light-surface-container-lowest: #FFFFFF;
+  --color-light-surface-container-low: #F2F4F2;
+  --color-light-surface-container: #ECEEEC;
+  --color-light-surface-container-high: #E6E9E7;
+  --color-light-surface-container-highest: #E1E3E1;
+  --color-light-on-surface: #191C1B;
+  --color-light-surface-variant: #DBE5E1;
+  --color-light-on-surface-variant: #3F4947;
+  --color-light-outline: #6F7977;
+  --color-light-outline-variant: #BEC9C6;
+  --color-light-inverse-surface: #2E3130;
+  --color-light-inverse-on-surface: #EFF1EF;
+  --color-light-inverse-primary: #90D3C7;
+
+  --font-display: "Wix Madefor Display", "Instrument Sans", system-ui, sans-serif;
+  --font-headline: "Wix Madefor Display", "Instrument Sans", system-ui, sans-serif;
+  --font-title: "Instrument Sans", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, sans-serif;
+  --font-label: "Instrument Sans", system-ui, sans-serif;
+  --font-mono: "Source Code Pro", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-light-surface);
+    color: var(--color-light-on-surface);
+    font-family: var(--font-body);
+  }
+
+  button:not(:disabled),
+  a[href] {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+}
