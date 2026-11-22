@@ -359,7 +359,7 @@ interface ProfileViewProps {
     unit: string;
     email: string;
     password: string;
-  }) => { ok: boolean; error?: string };
+  }) => Promise<{ ok: boolean; error?: string }>;
   onUpdateAccount: (
     accountId: string,
     payload: {
@@ -475,7 +475,7 @@ export function ProfileView({
     setEditError('');
   };
 
-  const handleSubmitNewAccount = (e: React.FormEvent) => {
+  const handleSubmitNewAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isDirector) return;
 
@@ -488,7 +488,8 @@ export function ProfileView({
       return;
     }
 
-    const result = onAddAccount({
+    setFormError('');
+    const result = await onAddAccount({
       name: newName.trim(),
       role: newRole,
       title: newTitle.trim() || ROLE_DEFAULT_TITLES[newRole],
@@ -874,7 +875,7 @@ export function ProfileView({
                     </label>
                     <input
                       id="acc-password"
-                      type="text"
+                      type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Minimal 6 karakter"
