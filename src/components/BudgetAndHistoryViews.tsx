@@ -33,9 +33,18 @@ import { SchoolLogo } from './SchoolLogo';
 interface BudgetViewProps {
   budgetLines: BudgetLine[];
   requests: FundRequest[];
+  currentUser: UserProfile;
+  onAddBudgetLine: (payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => { ok: boolean; error?: string };
 }
 
-export function BudgetView({ budgetLines, requests }: BudgetViewProps) {
+export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine }: BudgetViewProps) {
+  const canManageBudget = currentUser.role === 'direktur' || currentUser.role === 'bendahara-umum';
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newBudgetName, setNewBudgetName] = useState('');
+  const [newBudgetCode, setNewBudgetCode] = useState('');
+  const [newBudgetUnit, setNewBudgetUnit] = useState('');
+  const [newBudgetLimit, setNewBudgetLimit] = useState('');
+  const [formError, setFormError] = useState('');
   const rows = useMemo(() => {
     return budgetLines.map((line) => {
       const pendingReserved = requests
@@ -86,6 +95,7 @@ export function BudgetView({ budgetLines, requests }: BudgetViewProps) {
             persetujuan
           </p>
         </div>
+        {canManageBudget && <button type="button" onClick={() => { setShowAddForm(true); setFormError(''); }} className="inline-flex items-center gap-2 rounded-[8px] bg-[#00433C] text-white px-4 py-2.5 font-label text-[13px] font-semibold hover:bg-[#0F5C53]"><Plus className="w-4 h-4" /> Tambah Pos</button>}
       </header>
 
       <header className="lg:hidden sticky top-0 z-20 bg-[#FFFFFF] border-b border-[#BEC9C6] px-4 py-3 flex items-center gap-2">
@@ -98,9 +108,31 @@ export function BudgetView({ budgetLines, requests }: BudgetViewProps) {
             Pos Anggaran
           </h1>
         </div>
+        {canManageBudget && <button type="button" onClick={() => { setShowAddForm(true); setFormError(''); }} aria-label="Tambah Pos Anggaran" className="ml-auto inline-flex items-center gap-1.5 rounded-[8px] bg-[#00433C] text-white px-3 py-2 font-label text-[12px] font-semibold"><Plus className="w-4 h-4" /> Tambah</button>}
       </header>
 
       <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 max-w-7xl w-full mx-auto flex flex-col gap-6">
+        {showAddForm && canManageBudget && (
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (!newBudgetName.trim() || !newBudgetCode.trim() || !newBudgetUnit.trim() || !newBudgetLimit.trim()) { setFormError('Semua kolom wajib diisi.'); return; }
+            const limit = Number(newBudgetLimit);
+            if (!Number.isFinite(limit) || limit <= 0) { setFormError('Pagu tahunan harus berupa angka lebih dari 0.'); return; }
+            const result = onAddBudgetLine({ name: newBudgetName.trim(), code: newBudgetCode.trim().toUpperCase(), unit: newBudgetUnit.trim(), annualLimit: limit });
+            if (!result.ok) { setFormError(result.error || 'Gagal menambahkan pos anggaran.'); return; }
+            setNewBudgetName(''); setNewBudgetCode(''); setNewBudgetUnit(''); setNewBudgetLimit(''); setFormError(''); setShowAddForm(false);
+          }} className="rounded-[12px]] border border-[#BEC9C6] bg-white p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between"><h2 className="font-title text-[16px] font-semibold">Tambah Pos Anggaran Baru</h2><button type="button" onClick={() => setShowAddForm(false)} aria-label="Tutup form"><X className="w-4 h-4" /></button></div>
+            {formError && <p role="alert" className="rounded-[8px] bg-[#FFDAD6] text-[#410002] px-3 py-2 text-[13px]">{formError}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <label className="flex flex-col gap-1 text-[13px] font-semibold">Kode Pos<input value={newBudgetCode} onChange={e => setNewBudgetCode(e.target.value)} placeholder="POS-5501" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+              <label className="flex flex-col gap-1 text-[13px] font-semibold">Nama Pos Anggaran<input value={newBudgetName} onChange={e => setNewBudgetName(e.target.value)} placeholder="Contoh: Kegiatan Tahfiz" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+              <label className="flex flex-col gap-1 text-[13px] font-semibold">Unit<input value={newBudgetUnit} onChange={e => setNewBudgetUnit(e.target.value)} placeholder="Contoh: Kesiswaan" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+              <label className="flex flex-col gap-1 text-[13px] font-semibold">Pagu Tahunan (Rp)<input type="number" min="1" step="1" value={newBudgetLimit} onChange={e => setNewBudgetLimit(e.target.value)} placeholder="10000000" className="rounded-[8px] border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
+            </div>
+            <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowAddForm(false)} className="rounded-[8px] border border-[#BEC9C6] px-4 py-2 text-[13px] font-semibold">Batal</button><button type="submit" className="rounded-[8px] bg-[#00433C] text-white px-4 py-2 text-[13px] font-semibold">Simpan Pos Anggaran</button></div>
+          </form>
+        )}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-4 flex flex-col gap-1">
             <span className="font-label text-[12px] font-medium text-[#3F4947]">
