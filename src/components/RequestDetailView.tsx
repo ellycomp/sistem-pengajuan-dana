@@ -35,6 +35,7 @@ interface RequestDetailViewProps {
 
 export function RequestDetailView({
   request,
+  currentRole,
   currentUserName,
   onBack,
   onApproveStage,
@@ -88,7 +89,7 @@ export function RequestDetailView({
     (t) => t.stageStep === request.currentStageStep
   );
   const activeStage = request.stages.find((stage) => stage.step === request.currentStageStep);
-  const canReviewCurrentStage = request.status === 'diproses' && activeStage?.personName === currentUserName;
+  const canReviewCurrentStage = currentRole !== 'guru' && request.status === 'diproses' && activeStage?.personName === currentUserName;
 
   const primaryApproveLabel = activeTierConfig
     ? request.currentStageStep === 5
