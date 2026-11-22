@@ -10,15 +10,16 @@ interface LoginViewProps {
 }
 
 export function LoginView({ accounts, onLogin }: LoginViewProps) {
-  const defaultGuru =
-    accounts.find((a) => a.role === 'guru') || accounts[0];
+  // Open with the known administrator profile; never prefill demo passwords.
+  const defaultDirector = accounts.find((a) => a.role === 'direktur');
 
-  const [selectedRole, setSelectedRole] = useState<RoleId>('guru');
-  const [email, setEmail] = useState<string>(defaultGuru?.email || '');
-  const [password, setPassword] = useState<string>('qudwah2026');
+  const [selectedRole, setSelectedRole] = useState<RoleId>('direktur');
+  const [email, setEmail] = useState<string>(defaultDirector?.email || '');
+  const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [rememberMe, setRememberMe] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [loginBusy, setLoginBusy] = useState<boolean>(false);
   const [showForgotHelp, setShowForgotHelp] = useState<boolean>(false);
   const [resetBusy, setResetBusy] = useState<boolean>(false);
   const [resetMessage, setResetMessage] = useState<string>('');
@@ -90,7 +91,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
     const matchingAccount = accounts.find((a) => a.role === role);
     setEmail(matchingAccount?.email || '');
     // Clear password when switching to Direktur so credentials are entered explicitly
-    setPassword(role === 'direktur' ? '' : 'qudwah2026');
+    setPassword('');
     setErrorMsg('');
   };
 
@@ -112,48 +113,63 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
     }
 
     setErrorMsg('');
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password,
-    });
-    if (error || !data.user) {
-      setErrorMsg(error?.message || 'Email atau kata sandi tidak sesuai.');
-      return;
+    setLoginBusy(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+      if (error || !data.user) {
+        const raw = error?.message || '';
+        const friendly = /invalid login credentials/i.test(raw)
+          ? 'Email atau kata sandi salah. Pastikan akun sudah dibuat di Supabase Authentication dan kata sandinya benar.'
+          : /email not confirmed/i.test(raw)
+            ? 'Email akun belum dikonfirmasi. Pengelola perlu mengonfirmasi akun melalui Supabase Authentication.'
+            : raw || 'Email atau kata sandi tidak sesuai.';
+        setErrorMsg(friendly);
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, email, role, title, unit, avatar')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        await supabase.auth.signOut();
+        const detail = profileError
+          ? ` Kode: ${profileError.code || 'tidak tersedia'} — ${profileError.message}`
+          : '';
+        setErrorMsg(`Login Auth berhasil, tetapi profil database tidak terbaca.${detail}`);
+        return;
+      }
+
+      if (profile.role !== selectedRole) {
+        await supabase.auth.signOut();
+        setErrorMsg(`Akun ini terdaftar sebagai "${profile.role}", bukan "${selectedRole}". Pilih peran yang sesuai.`);
+        return;
+      }
+
+      const authenticatedAccount: UserAccount = {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        title: profile.title,
+        unit: profile.unit,
+        avatar: profile.avatar || profile.name.slice(0, 2).toUpperCase(),
+        password: '',
+        isDefault: false,
+      };
+      onLogin(authenticatedAccount, rememberMe);
+    } catch (loginError) {
+      setErrorMsg(loginError instanceof Error
+        ? `Tidak dapat menghubungi layanan login: ${loginError.message}`
+        : 'Terjadi kesalahan saat masuk. Periksa koneksi internet dan coba kembali.');
+    } finally {
+      setLoginBusy(false);
     }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, name, email, role, title, unit, avatar')
-      .eq('id', data.user.id)
-      .single();
-
-    if (profileError || !profile) {
-      await supabase.auth.signOut();
-      const detail = profileError
-        ? ` (Kode: ${profileError.code || 'tidak tersedia'} — ${profileError.message})`
-        : '';
-      setErrorMsg(`Autentikasi berhasil, tetapi aplikasi gagal membaca profil. Periksa izin SELECT tabel profiles.${detail}`);
-      return;
-    }
-
-    if (profile.role !== selectedRole) {
-      await supabase.auth.signOut();
-      setErrorMsg('Peran akses yang dipilih tidak sesuai dengan peran akun ini.');
-      return;
-    }
-
-    const authenticatedAccount: UserAccount = {
-      id: profile.id,
-      name: profile.name,
-      email: profile.email,
-      role: profile.role,
-      title: profile.title,
-      unit: profile.unit,
-      avatar: profile.avatar || profile.name.slice(0, 2).toUpperCase(),
-      password: '',
-      isDefault: false,
-    };
-    onLogin(authenticatedAccount, rememberMe);
   };
 
   return (
@@ -320,9 +336,10 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
 
               <button
                 type="submit"
+                disabled={loginBusy}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-[8px] bg-[#00433C] text-[#FFFFFF] px-4 py-2.5 font-label text-[14px] leading-[20px] font-semibold transition-colors duration-150 hover:bg-[#0F5C53] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00433C] mt-1"
               >
-                <span>Masuk ke Portal</span>
+                <span>{loginBusy ? 'Memeriksa akun...' : 'Masuk ke Portal'}</span>
               </button>
             </form>
           </div>
@@ -450,9 +467,10 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
 
             <button
               type="submit"
+              disabled={loginBusy}
               className="w-full inline-flex items-center justify-center gap-2 rounded-[8px] bg-[#00433C] text-[#FFFFFF] px-4 py-2.5 font-label text-[14px] leading-[20px] font-semibold transition-colors duration-150 hover:bg-[#0F5C53] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00433C] mt-1"
             >
-              <span>Masuk ke Aplikasi</span>
+              <span>{loginBusy ? 'Memeriksa akun...' : 'Masuk ke Aplikasi'}</span>
             </button>
           </form>
         </section>
