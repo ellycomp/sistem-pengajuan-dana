@@ -15,6 +15,7 @@ import { SchoolLogo } from './SchoolLogo';
 
 interface TierReviewViewProps {
   requests: FundRequest[];
+  currentUserName: string;
   selectedTier: TierKey;
   onSelectTier: (tier: TierKey) => void;
   onApproveStage: (requestId: string, note: string) => void;
@@ -24,6 +25,7 @@ interface TierReviewViewProps {
 
 export function TierReviewView({
   requests,
+  currentUserName,
   selectedTier,
   onSelectTier,
   onApproveStage,
@@ -34,8 +36,10 @@ export function TierReviewView({
     TIER_CONFIGS.find((t) => t.key === selectedTier) || TIER_CONFIGS[0];
 
   const tierQueue = requests.filter(
-    (r) =>
-      r.status === 'diproses' && r.currentStageStep === activeTier.stageStep
+    (r) => {
+      const assignedReviewer = r.stages.find((stage) => stage.step === r.currentStageStep);
+      return r.status === 'diproses' && r.currentStageStep === activeTier.stageStep && assignedReviewer?.personName === currentUserName;
+    }
   );
 
   const totalPendingAllTiers = requests.filter(
