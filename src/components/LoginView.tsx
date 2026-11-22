@@ -65,7 +65,10 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
 
     if (profileError || !profile) {
       await supabase.auth.signOut();
-      setErrorMsg('Akun berhasil masuk, tetapi profil belum terdaftar. Hubungi Direktur/pengelola.');
+      const detail = profileError
+        ? ` (Kode: ${profileError.code || 'tidak tersedia'} — ${profileError.message})`
+        : '';
+      setErrorMsg(`Autentikasi berhasil, tetapi aplikasi gagal membaca profil. Periksa izin SELECT tabel profiles.${detail}`);
       return;
     }
 
