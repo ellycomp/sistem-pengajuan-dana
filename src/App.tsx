@@ -293,6 +293,12 @@ export default function App() {
   };
 
   const handleApproveStage = (requestId: string, note: string) => {
+    const targetRequest = requests.find((req) => req.id === requestId);
+    const activeStage = targetRequest?.stages.find((stage) => stage.step === targetRequest.currentStageStep);
+    if (!targetRequest || targetRequest.status !== 'diproses' || activeStage?.personName !== currentUser.name) {
+      setToastMessage('Anda tidak memiliki wewenang untuk memeriksa tahap pengajuan ini. Pengajuan harus diperiksa oleh petugas pada jenjang yang sedang aktif.');
+      return;
+    }
     const timestamp = formatCurrentTimestamp();
     let approvedTitle = '';
     let completedFully = false;
@@ -361,6 +367,12 @@ export default function App() {
   };
 
   const handleRequestRevision = (requestId: string, note: string) => {
+    const targetRequest = requests.find((req) => req.id === requestId);
+    const activeStage = targetRequest?.stages.find((stage) => stage.step === targetRequest.currentStageStep);
+    if (!targetRequest || targetRequest.status !== 'diproses' || activeStage?.personName !== currentUser.name) {
+      setToastMessage('Anda tidak memiliki wewenang untuk meminta revisi pada tahap ini.');
+      return;
+    }
     const timestamp = formatCurrentTimestamp();
     let revisedTitle = '';
 
@@ -417,6 +429,11 @@ export default function App() {
   };
 
   const handleResubmit = (requestId: string) => {
+    const targetRequest = requests.find((req) => req.id === requestId);
+    if (!targetRequest || targetRequest.status !== 'revisi' || targetRequest.requesterName !== currentUser.name) {
+      setToastMessage('Hanya pengaju yang bersangkutan yang dapat mengajukan ulang berkas revisi.');
+      return;
+    }
     const timestamp = formatCurrentTimestamp();
     let title = '';
 
