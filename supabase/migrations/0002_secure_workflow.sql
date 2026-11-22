@@ -70,7 +70,7 @@ begin
     values (
       coalesce(v_item->>'id', gen_random_uuid()::text), p_id,
       trim(v_item->>'name'), (v_item->>'quantity')::numeric,
-      coalesce(v_item->>'unit',''), (v_item->>'unitPrice')::numeric
+      coalesce(v_item->>'unitLabel',''), (v_item->>'unitPrice')::numeric
     );
   end loop;
 
@@ -230,7 +230,7 @@ begin
     values (
       coalesce(v_item->>'id', gen_random_uuid()::text), p_request_id,
       trim(v_item->>'name'), (v_item->>'quantity')::numeric,
-      coalesce(v_item->>'unit',''), (v_item->>'unitPrice')::numeric
+      coalesce(v_item->>'unitLabel',''), (v_item->>'unitPrice')::numeric
     );
   end loop;
 
