@@ -95,7 +95,7 @@ begin
            select 1 from public.profiles p
            where p.role = (v_stage->>'roleKey')::public.app_role
              and lower(p.name) = lower(v_stage->>'personName')
-         ) then
+         )) then
         raise exception 'Petugas tahap persetujuan tidak valid atau belum memiliki akun.';
       end if;
     else
