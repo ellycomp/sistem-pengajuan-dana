@@ -6,9 +6,10 @@ on:
     paths:
       - 'src/**'
       - 'public/**'
+      - 'scripts/**'
       - 'index.html'
       - 'package.json'
-      - 'capacitor.config.ts'
+      - 'capacitor.config.json'
       - 'vite.config.ts'
       - '.github/workflows/build-android-apk.yml'
   workflow_dispatch:
@@ -47,6 +48,9 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Apply official SIT Qudwah launcher icon
+        run: node scripts/generate-android-icons.mjs
 
       - name: Build installable debug APK
         run: |
