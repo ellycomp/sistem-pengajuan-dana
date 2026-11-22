@@ -232,11 +232,15 @@ export default function App() {
         password: '',
         isDefault: false,
       };
-      setAccounts((previous) =>
-        previous.some((item) => item.id === account.id)
-          ? previous.map((item) => item.id === account.id ? account : item)
-          : [...previous, account]
-      );
+      // Match by Auth ID OR email so the local seed director and Supabase
+      // profile are merged into one visible account.
+      setAccounts((previous) => [
+        ...previous.filter((item) =>
+          item.id !== account.id &&
+          item.email?.toLowerCase() !== account.email.toLowerCase()
+        ),
+        account,
+      ]);
       setCurrentAccountId(account.id);
       setIsLoggedIn(true);
       setActiveTab(account.role === 'guru' ? 'pengajuan' : 'persetujuan');
@@ -304,7 +308,13 @@ export default function App() {
   ).length;
 
   const handleLogin = (account: UserAccount) => {
-    setAccounts((prev) => prev.some((item) => item.id === account.id) ? prev.map((item) => item.id === account.id ? account : item) : [...prev, account]);
+    setAccounts((prev) => [
+      ...prev.filter((item) =>
+        item.id !== account.id &&
+        item.email?.toLowerCase() !== account.email.toLowerCase()
+      ),
+      account,
+    ]);
     setCurrentAccountId(account.id);
     setIsLoggedIn(true);
     if (account.role !== 'guru' && account.role !== 'direktur') {
