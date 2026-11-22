@@ -328,48 +328,46 @@ export default function App() {
     setToastMessage('');
   };
 
-  const handleAddAccount = (payload: {
+  const handleAddAccount = async (payload: {
     name: string;
     role: RoleId;
     title: string;
     unit: string;
     email: string;
     password: string;
-  }): { ok: boolean; error?: string } => {
+  }): Promise<{ ok: boolean; error?: string }> => {
     if (currentUser.role !== 'direktur') {
-      return {
-        ok: false,
-        error: 'Hanya Direktur SIT Qudwah yang berwenang menambahkan akun baru.',
-      };
+      return { ok: false, error: 'Hanya Direktur yang dapat menambahkan akun.' };
     }
-
-    const normalizedEmail = payload.email.trim().toLowerCase();
-    const exists = accounts.some(
-      (acc) => acc.email.toLowerCase() === normalizedEmail
-    );
-    if (exists) {
-      return {
-        ok: false,
-        error: 'Email tersebut sudah terdaftar pada akun lain.',
-      };
+    if (!supabase) return { ok: false, error: 'Koneksi Supabase belum tersedia.' };
+    const { data, error } = await supabase.functions.invoke('manage-staff-account', {
+      body: {
+        action: 'create',
+        name: payload.name.trim(),
+        email: payload.email.trim().toLowerCase(),
+        password: payload.password,
+        role: payload.role,
+        title: payload.title.trim(),
+        unit: payload.unit.trim(),
+      },
+    });
+    if (error || data?.error) {
+      return { ok: false, error: data?.error || error?.message || 'Gagal membuat akun.' };
     }
-
+    const created = data.profile;
     const newAccount: UserAccount = {
-      id: `acc-${Date.now()}`,
-      name: payload.name,
-      role: payload.role,
-      title: payload.title,
-      unit: payload.unit,
-      email: payload.email.trim(),
-      password: payload.password,
-      avatar: makeAvatarInitials(payload.name),
+      id: created.id,
+      name: created.name,
+      email: created.email,
+      role: created.role,
+      title: created.title,
+      unit: created.unit,
+      avatar: makeAvatarInitials(created.name),
+      password: '',
       isDefault: false,
     };
-
-    setAccounts((prev) => [...prev, newAccount]);
-    setToastMessage(
-      `Akun baru untuk ${newAccount.name} (${newAccount.email}) berhasil ditambahkan.`
-    );
+    setAccounts((prev) => [...prev.filter((item) => item.id !== newAccount.id), newAccount]);
+    setToastMessage(`Akun ${newAccount.name} berhasil dibuat. Petugas dapat login menggunakan email dan kata sandi yang ditetapkan.`);
     return { ok: true };
   };
 
