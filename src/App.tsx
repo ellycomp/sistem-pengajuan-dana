@@ -287,6 +287,24 @@ export default function App() {
     setToastMessage(`Akun ${target.name} telah dihapus.`);
   };
 
+  const handleDeleteRequest = (requestId: string) => {
+    const targetRequest = requests.find((req) => req.id === requestId);
+    if (!targetRequest || targetRequest.requesterName !== currentUser.name) {
+      setToastMessage('Anda hanya dapat menghapus pengajuan milik sendiri.');
+      return;
+    }
+    if (targetRequest.status === 'disetujui') {
+      setToastMessage('Pengajuan yang sudah disetujui tidak dapat dihapus.');
+      return;
+    }
+    setRequests((prev) => prev.filter((req) => req.id !== requestId));
+    if (selectedRequestId === requestId) {
+      setSelectedRequestId('');
+      setActiveTab('pengajuan');
+    }
+    setToastMessage(`Pengajuan "${targetRequest.title}" berhasil dihapus.`);
+  };
+
   const handleOpenDetail = (requestId: string) => {
     setSelectedRequestId(requestId);
     setActiveTab('detail');
@@ -724,6 +742,7 @@ export default function App() {
             budgetLines={budgetLines}
             currentUser={currentUser}
             onOpenDetail={handleOpenDetail}
+            onDeleteRequest={handleDeleteRequest}
             onCreateRequest={handleCreateRequest}
           />
         )}
