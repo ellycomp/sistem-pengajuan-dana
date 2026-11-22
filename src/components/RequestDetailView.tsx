@@ -57,6 +57,13 @@ export function RequestDetailView({
   const [revisionAttachment, setRevisionAttachment] = useState(request.attachmentName);
   const [revisionItems, setRevisionItems] = useState<LineItem[]>(request.items.map((item) => ({ ...item })));
 
+  const documentDate = new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  }).format(new Date());
+
   const totalAmount = calculateRequestTotal(request.items);
   const isAboveTwoMillion = totalAmount > 2_000_000;
   const statusLabel = getStatusLabel(request);
@@ -970,7 +977,7 @@ export function RequestDetailView({
                 </div>
 
                 <p className="text-right text-[12px] text-[#191C1B] mb-4">
-                  Sungai Rengit, ................................. 2026
+                  Sungai Rengit, {documentDate}
                 </p>
 
                 <div className="grid grid-cols-3 gap-4 text-center text-[13px]">
@@ -1165,7 +1172,7 @@ export function RequestDetailView({
         </div>
 
         <p className="text-right text-[12px] text-[#191C1B] mb-4">
-          Sungai Rengit, ................................. 2026
+          Sungai Rengit, {documentDate}
         </p>
 
         <div className="grid grid-cols-3 gap-4 text-center text-[13px]">
