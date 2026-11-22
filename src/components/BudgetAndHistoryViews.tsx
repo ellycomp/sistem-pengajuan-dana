@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   ChevronRight,
   Download,
+  Image as ImageIcon,
   Lock,
   LogOut,
   Pencil,
@@ -400,6 +401,7 @@ export function ProfileView({
 }: ProfileViewProps) {
   const isDirector = currentUser.role === 'direktur';
   const [backupError, setBackupError] = useState<string>('');
+  const [logoMessage, setLogoMessage] = useState<string>('');
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
   const [newName, setNewName] = useState<string>('');
   const [newRole, setNewRole] = useState<RoleId>('guru');
@@ -631,6 +633,82 @@ export function ProfileView({
           </div>
           <ChevronRight className="w-5 h-5 text-[#3F4947]" aria-hidden="true" />
         </button>
+
+        {/* School Logo Settings — Direktur only */}
+        {isDirector && (
+          <section className="rounded-[12px] border border-[#BEC9C6] bg-white p-5 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[9px] bg-[#CDE8E2] flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-[#00433C]" aria-hidden="true" />
+              </div>
+              <div>
+                <h2 className="font-title text-[16px] font-semibold text-[#191C1B]">Ubah Lambang Sekolah</h2>
+                <p className="font-body text-[13px] text-[#3F4947]">Ganti logo yang tampil di aplikasi dan kop lembar tanda tangan.</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-4 rounded-[10px] border border-[#BEC9C6] bg-[#F8FAF8] p-4">
+              <div className="w-28 h-28 rounded-[10px] border border-[#BEC9C6] bg-white p-2 flex items-center justify-center shrink-0">
+                <SchoolLogo className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 flex flex-col gap-2 text-center sm:text-left">
+                <p className="font-label text-[13px] font-semibold text-[#191C1B]">Pratinjau lambang saat ini</p>
+                <p className="font-body text-[12px] text-[#3F4947]">Gunakan file PNG atau JPG. Lambang akan dipasang apa adanya tanpa dipotong atau diberi efek. Maksimal ukuran file 1 MB.</p>
+                <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                  <label className="inline-flex items-center gap-2 rounded-[8px] bg-[#00433C] text-white px-4 py-2 font-label text-[13px] font-semibold hover:bg-[#0F5C53] cursor-pointer">
+                    <Upload className="w-4 h-4" aria-hidden="true" />
+                    Pilih Lambang
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,.png,.jpg,.jpeg"
+                      className="sr-only"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = '';
+                        if (!file) return;
+                        if (!['image/png', 'image/jpeg'].includes(file.type)) {
+                          setLogoMessage('Format file harus PNG atau JPG.');
+                          return;
+                        }
+                        if (file.size > 1024 * 1024) {
+                          setLogoMessage('Ukuran file maksimal 1 MB. Kecilkan ukuran file tanpa mengubah desain lambang, lalu coba lagi.');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          try {
+                            const result = String(reader.result || '');
+                            if (!result.startsWith('data:image/')) throw new Error('Format gambar tidak valid.');
+                            localStorage.setItem('sit_qudwah_custom_logo_v1', result);
+                            window.dispatchEvent(new Event('sit-qudwah-logo-updated'));
+                            setLogoMessage('Lambang berhasil diperbarui pada perangkat ini.');
+                          } catch {
+                            setLogoMessage('Penyimpanan penuh atau tidak diizinkan. Hapus sebagian data browser atau gunakan file yang lebih kecil.');
+                          }
+                        };
+                        reader.onerror = () => setLogoMessage('File lambang tidak dapat dibaca.');
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  <button type="button" onClick={() => {
+                    try {
+                      localStorage.removeItem('sit_qudwah_custom_logo_v1');
+                      window.dispatchEvent(new Event('sit-qudwah-logo-updated'));
+                      setLogoMessage('Lambang bawaan aplikasi telah dipulihkan.');
+                    } catch {
+                      setLogoMessage('Tidak dapat memulihkan lambang bawaan.');
+                    }
+                  }} className="inline-flex items-center gap-2 rounded-[8px] border border-[#BEC9C6] bg-white text-[#191C1B] px-4 py-2 font-label text-[13px] font-semibold hover:bg-[#F2F4F2]">
+                    <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                    Pulihkan Lambang Bawaan
+                  </button>
+                </div>
+              </div>
+            </div>
+            {logoMessage && <p role="status" aria-live="polite" className="rounded-[8px] bg-[#E6F4EA] text-[#14532D] px-3 py-2 text-[13px]">{logoMessage}</p>}
+            <p className="font-body text-[11px] text-[#6B7280]">Catatan: lambang tersimpan di browser/perangkat ini. Jika menggunakan perangkat lain, unggah lambang yang sama di perangkat tersebut.</p>
+          </section>
+        )}
 
         {/* Account Management Section — Strictly restricted to Direktur */}
         {isDirector ? (
