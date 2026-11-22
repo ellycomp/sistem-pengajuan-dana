@@ -28,6 +28,7 @@ interface DashboardRequestsViewProps {
   budgetLines: BudgetLine[];
   currentUser: UserProfile;
   onOpenDetail: (requestId: string) => void;
+  onDeleteRequest: (requestId: string) => void;
   onCreateRequest: (payload: {
     requesterRole: string;
     title: string;
@@ -45,6 +46,7 @@ export function DashboardRequestsView({
   budgetLines,
   currentUser,
   onOpenDetail,
+  onDeleteRequest,
   onCreateRequest,
 }: DashboardRequestsViewProps) {
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -55,6 +57,7 @@ export function DashboardRequestsView({
     'all'
   );
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [requestToDelete, setRequestToDelete] = useState<FundRequest | null>(null);
   const requesterRoleOptions = currentUser.name === 'Rosyidatul Alyah'
     ? ['Wali Kelas 1', 'Wakil Bidang Akademik']
     : currentUser.name === 'Eka Priyana'
@@ -455,17 +458,16 @@ export function DashboardRequestsView({
                         {formatRupiah(total)}
                       </td>
                       <td className="px-4 py-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOpenDetail(req.id);
-                          }}
-                          className="inline-flex items-center gap-1 font-label text-[13px] font-semibold text-[#00433C] hover:underline whitespace-nowrap"
-                        >
-                          <span>Detail Alur</span>
-                          <ChevronRight className="w-4 h-4" aria-hidden="true" />
-                        </button>
+                        <div className="inline-flex items-center justify-end gap-3">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); onOpenDetail(req.id); }} className="inline-flex items-center gap-1 font-label text-[13px] font-semibold text-[#00433C] hover:underline whitespace-nowrap">
+                            <span>Detail Alur</span><ChevronRight className="w-4 h-4" aria-hidden="true" />
+                          </button>
+                          {req.requesterName === currentUser.name && req.status !== 'disetujui' && (
+                            <button type="button" onClick={(e) => { e.stopPropagation(); setRequestToDelete(req); }} aria-label={`Hapus pengajuan ${req.code}`} className="inline-flex items-center gap-1 font-label text-[13px] font-semibold text-[#BA1A1A] hover:underline whitespace-nowrap">
+                              <Trash2 className="w-4 h-4" aria-hidden="true" /><span>Hapus</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -507,41 +509,50 @@ export function DashboardRequestsView({
             filteredRequests.map((req) => {
               const total = calculateRequestTotal(req.items);
               return (
-                <button
-                  key={req.id}
-                  type="button"
-                  onClick={() => onOpenDetail(req.id)}
-                  className="w-full text-left rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-4 flex flex-col gap-2 hover:bg-[#F2F4F2] transition-colors"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-mono text-[11px] font-medium text-[#3F4947] truncate max-w-[65%]">
-                      {req.code}
-                    </span>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 font-label text-[11px] font-medium shrink-0 ${badgeStyle(
-                        req.status
-                      )}`}
-                    >
-                      {getStatusLabel(req)}
-                    </span>
-                  </div>
-                  <p className="font-title text-[16px] font-semibold text-[#191C1B]">
-                    {req.title}
-                  </p>
-                  <div className="flex items-center justify-between gap-2 border-t border-[#BEC9C6] pt-2">
-                    <span className="font-label text-[12px] text-[#3F4947] truncate">
-                      {req.schoolUnit} · {req.budgetCategoryName}
-                    </span>
-                    <span className="font-label text-[14px] font-semibold text-[#00433C] tabular-nums shrink-0">
-                      {formatRupiah(total)}
-                    </span>
-                  </div>
-                </button>
+                <div key={req.id} className="rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-4 flex flex-col gap-2">
+                  <button type="button" onClick={() => onOpenDetail(req.id)} className="w-full text-left flex flex-col gap-2 hover:bg-[#F8FAF8] transition-colors">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-mono text-[11px] font-medium text-[#3F4947] truncate max-w-[65%]">{req.code}</span>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-label text-[11px] font-medium shrink-0 ${badgeStyle(req.status)}`}>{getStatusLabel(req)}</span>
+                    </div>
+                    <p className="font-title text-[16px] font-semibold text-[#191C1B]">{req.title}</p>
+                    <div className="flex items-center justify-between gap-2 border-t border-[#BEC9C6] pt-2">
+                      <span className="font-label text-[12px] text-[#3F4947] truncate">{req.schoolUnit} · {req.budgetCategoryName}</span>
+                      <span className="font-label text-[14px] font-semibold text-[#00433C] tabular-nums shrink-0">{formatRupiah(total)}</span>
+                    </div>
+                  </button>
+                  {req.requesterName === currentUser.name && req.status !== 'disetujui' && (
+                    <div className="flex justify-end border-t border-[#BEC9C6] pt-2">
+                      <button type="button" onClick={() => setRequestToDelete(req)} className="inline-flex items-center gap-1.5 rounded-[7px] px-3 py-1.5 font-label text-[12px] font-semibold text-[#BA1A1A] hover:bg-[#FFDAD6]">
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />Hapus Pengajuan
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })
           )}
         </section>
       </main>
+
+      {/* Modal Konfirmasi Hapus Pengajuan */}
+      {requestToDelete && (
+        <div className="fixed inset-0 z-[60] bg-[#191C1B]/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="delete-request-title">
+          <div className="w-full max-w-md rounded-[12px] border border-[#BEC9C6] bg-white p-5 flex flex-col gap-4 shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#FFDAD6] text-[#BA1A1A] flex items-center justify-center shrink-0"><Trash2 className="w-5 h-5" aria-hidden="true" /></div>
+              <div>
+                <h2 id="delete-request-title" className="font-title text-[18px] font-semibold text-[#191C1B]">Hapus Pengajuan Dana?</h2>
+                <p className="font-body text-[13px] text-[#3F4947] mt-1">Anda akan menghapus <strong>{requestToDelete.code} — {requestToDelete.title}</strong>. Tindakan ini tidak dapat dibatalkan.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setRequestToDelete(null)} className="rounded-[8px] border border-[#BEC9C6] px-4 py-2 font-label text-[13px] font-semibold text-[#191C1B] hover:bg-[#F2F4F2]">Batal</button>
+              <button type="button" onClick={() => { onDeleteRequest(requestToDelete.id); setRequestToDelete(null); }} className="inline-flex items-center gap-1.5 rounded-[8px] bg-[#BA1A1A] px-4 py-2 font-label text-[13px] font-semibold text-white hover:bg-[#991B1B]"><Trash2 className="w-4 h-4" aria-hidden="true" />Ya, Hapus</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Ajukan Dana Baru */}
       {showCreateModal && (
