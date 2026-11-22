@@ -19,30 +19,57 @@ Deno.serve(async (req: Request) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return json({ error: "Sesi login tidak ditemukan." }, 401);
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const token = authHeader.slice("Bearer ".length);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+    console.error("Missing Edge Function environment variable", {
+      hasUrl: Boolean(supabaseUrl),
+      hasAnonOrPublishableKey: Boolean(anonKey),
+      hasServiceRoleKey: Boolean(serviceRoleKey),
+    });
+    return json({ error: "Konfigurasi server belum lengkap. Periksa Secrets Edge Function." }, 500);
+  }
 
-  const authClient = createClient(supabaseUrl, anonKey, {
+  const token = authHeader.slice("Bearer ".length);
+  // Verify the caller with their own access token, then read their own profile
+  // under the authenticated role. This avoids depending on service-role profile lookup.
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: authData, error: authError } = await authClient.auth.getUser(token);
-  if (authError || !authData.user) return json({ error: "Sesi login tidak valid." }, 401);
+  const { data: authData, error: authError } = await userClient.auth.getUser(token);
+  if (authError || !authData.user) {
+    console.error("manage-staff-account auth validation failed", authError?.message);
+    return json({ error: "Sesi login tidak valid." }, 401);
+  }
+
+  const { data: caller, error: callerError } = await userClient
+    .from("profiles")
+    .select("id, role")
+    .eq("id", authData.user.id)
+    .maybeSingle();
+
+  if (callerError || !caller || String(caller.role).trim().toLowerCase() !== "direktur") {
+    console.error("manage-staff-account director check failed", {
+      userId: authData.user.id,
+      profileFound: Boolean(caller),
+      profileRole: caller?.role ?? null,
+      error: callerError?.message ?? null,
+      code: callerError?.code ?? null,
+    });
+    return json({
+      error: "Pemeriksaan hak Direktur gagal.",
+      detail: callerError?.message ?? (!caller ? "Profil pengguna tidak ditemukan atau tidak dapat dibaca." : `Peran akun adalah ${caller.role}, bukan direktur.`),
+      code: callerError?.code ?? null,
+      profileFound: Boolean(caller),
+      role: caller?.role ?? null,
+    }, 403);
+  }
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-
-  const { data: caller, error: callerError } = await admin
-    .from("profiles")
-    .select("id, role")
-    .eq("id", authData.user.id)
-    .single();
-
-  if (callerError || caller?.role !== "direktur") {
-    return json({ error: "Hanya Direktur SIT Qudwah yang dapat membuat akun petugas." }, 403);
-  }
 
   let input: Record<string, unknown>;
   try {
