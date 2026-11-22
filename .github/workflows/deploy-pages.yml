@@ -47,12 +47,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      # GitHub Pages is still running its automatic branch/Jekyll deployment.
-      # The latest Jekyll deployment finished several minutes AFTER the Vite deployment
-      # and overwrote the working site. Wait until Jekyll is finished, then publish Vite last.
-      - name: Wait for branch-based Pages deployment to finish
-        run: sleep 480
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
