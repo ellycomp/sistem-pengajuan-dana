@@ -74,7 +74,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
             <SchoolLogo className="w-12 h-16 p-1 border-transparent" />
             <div>
               <p className="font-title text-[18px] leading-[24px] font-semibold text-[#FFFFFF]">
-                KasSekolah
+                Sistem Pengajuan Dana
               </p>
               <p className="font-body text-[14px] leading-[20px] text-[#90D3C7]">
                 SIT Qudwah Sungai Rengit
@@ -240,7 +240,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
           <SchoolLogo className="w-20 h-28 rounded-[12px] p-1" />
           <div>
             <h1 className="font-display text-[28px] leading-[34px] tracking-[-0.25px] font-bold text-[#191C1B]">
-              KasSekolah
+              Sistem Pengajuan Dana
             </h1>
             <p className="font-body text-[14px] leading-[20px] text-[#3F4947]">
               SIT Qudwah Sungai Rengit
