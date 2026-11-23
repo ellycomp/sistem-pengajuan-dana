@@ -448,7 +448,23 @@ export default function App() {
     if (!target) return { ok: false, error: 'Akun tidak ditemukan.' };
 
     const safeRole: RoleId = accountId === currentUser.id ? 'direktur' : payload.role;
+    // Obtain a current access token before calling the protected Edge Function.
+    let { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session) {
+      return { ok: false, error: 'Sesi login tidak tersedia. Silakan keluar lalu masuk kembali.' };
+    }
+    let accessToken = sessionData.session.access_token;
+    const expiresAt = sessionData.session.expires_at || 0;
+    if (expiresAt * 1000 <= Date.now() + 60_000) {
+      const refreshed = await supabase.auth.refreshSession();
+      if (refreshed.error || !refreshed.data.session) {
+        return { ok: false, error: 'Sesi login sudah kedaluwarsa. Silakan keluar lalu masuk kembali.' };
+      }
+      accessToken = refreshed.data.session.access_token;
+    }
+
     const { data, error } = await supabase.functions.invoke('manage-staff-account', {
+      headers: { Authorization: `Bearer ${accessToken}` },
       body: {
         action: 'update_profile',
         accountId,
