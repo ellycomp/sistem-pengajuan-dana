@@ -1176,8 +1176,8 @@ export function ProfileView({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label htmlFor="edit-acc-niy" className="font-label text-[13px] font-semibold text-[#191C1B]">NIY (Nomor Induk Yayasan) <span className="text-red-600">*</span></label>
-                <input id="edit-acc-niy" type="text value={editNiy} onChange={(e) => setEditNiy(e.target.value)} className="w-full rounded-[8px] border border-[#BEC9C6] bg-white px-3 py-2 text-[14px]" />
+                <label htmlFor="edit-acc-niy" className="font-label text-[13px] font-semibold text-[#191C1B]">NIY (Nomor Induk Yayasan) <span className="text-xs font-normal text-[#64706D]">(Opsional)</span></label>
+                <input id="edit-acc-niy" type="text" value={editNiy} onChange={(e) => setEditNiy(e.target.value)} className="w-full rounded-[8px] border border-[#BEC9C6] bg-white px-3 py-2 text-[14px]" />
               </div>
 
               <div className="flex flex-col gap-1">
