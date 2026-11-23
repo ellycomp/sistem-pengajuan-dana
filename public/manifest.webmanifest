@@ -12,10 +12,16 @@
   "theme_color": "#00433C",
   "icons": [
     {
-      "src": "/sistem-pengajuan-dana/pwa-icon.svg?v=20261123",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/sistem-pengajuan-dana/logo-sit-qudwah.png?v=20261123",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/sistem-pengajuan-dana/logo-sit-qudwah.png?v=20261123",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
