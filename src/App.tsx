@@ -143,7 +143,7 @@ export default function App() {
     const loadAuthenticatedProfile = async (userId: string, initializeNavigation = false) => {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, name, email, role, title, unit, avatar, niy')
+        .select('*')
         .eq('id', userId)
         .single();
 
