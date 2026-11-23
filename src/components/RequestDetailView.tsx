@@ -19,7 +19,7 @@ import {
   getStatusLabel,
   TIER_CONFIGS,
 } from '../data/seedData';
-import { FundRequest, LineItem, RoleId } from '../types/kassekolah';
+import { FundRequest, LineItem, RoleId, UserAccount } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
 
 type Html2PdfWorker = {
@@ -44,6 +44,7 @@ const loadHtml2Pdf = async (): Promise<Html2PdfFactory> => {
 
 interface RequestDetailViewProps {
   request: FundRequest;
+  accounts: UserAccount[];
   currentRole: RoleId;
   currentUserName: string;
   onBack: () => void;
@@ -55,6 +56,7 @@ interface RequestDetailViewProps {
 
 export function RequestDetailView({
   request,
+  accounts,
   currentRole,
   currentUserName,
   onBack,
@@ -108,9 +110,19 @@ export function RequestDetailView({
     : stageBendaharaSekolah;
   const treasurerSignerName = treasurerSignerStage?.personName ||
     (isAboveTwoMillion ? 'Bendahara Umum' : 'Bendahara Sekolah');
-  const treasurerSignerNiy = treasurerSignerStage?.personNiy || '';
+  const treasurerSignerNiy =
+    treasurerSignerStage?.personNiy ||
+    accounts.find((account) =>
+      account.name === treasurerSignerStage?.personName &&
+      account.role === treasurerSignerStage?.roleKey
+    )?.niy || '';
   const directorSignerName = stageDirektur?.personName || 'Direktur SIT Qudwah';
-  const directorSignerNiy = stageDirektur?.personNiy || '';
+  const directorSignerNiy =
+    stageDirektur?.personNiy ||
+    accounts.find((account) =>
+      account.name === stageDirektur?.personName &&
+      account.role === stageDirektur?.roleKey
+    )?.niy || '';
 
   const completedCount = request.stages.filter(
     (s) => s.state === 'done'
