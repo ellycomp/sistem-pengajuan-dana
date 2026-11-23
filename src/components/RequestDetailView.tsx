@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { UserAccount,
+import {
   AlertCircle,
   ArrowLeft,
   Check,
@@ -19,7 +19,7 @@ import {
   getStatusLabel,
   TIER_CONFIGS,
 } from '../data/seedData';
-import { FundRequest, LineItem, RoleId } from '../types/kassekolah';
+import { FundRequest, LineItem, RoleId, UserAccount } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
 
 type Html2PdfWorker = {
