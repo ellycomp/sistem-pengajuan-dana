@@ -99,7 +99,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
     e.preventDefault();
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
-      setErrorMsg('Silakan masukkan email sekolah atau NIY pegawai.');
+      setErrorMsg('Silakan masukkan email sekolah.');
       return;
     }
     if (!password) {
@@ -266,11 +266,11 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
                   htmlFor="web-email"
                   className="font-label text-[14px] leading-[20px] font-semibold text-[#191C1B]"
                 >
-                  Email atau NIY
+                  Email Masuk
                 </label>
                 <input
                   id="web-email"
-                  type="text"
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@sitqudwah.sch.id"
@@ -413,7 +413,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
               </label>
               <input
                 id="mob-email"
-                type="text"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@sitqudwah.sch.id"
