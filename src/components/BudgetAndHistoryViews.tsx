@@ -173,6 +173,8 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
                         setNewBudgetUnit(row.unit);
                         setFormError('');
                         setShowAddForm(true);
+                        // Form berada di atas tabel; arahkan layar ke form agar terlihat di ponsel.
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                       }} className="inline-flex items-center gap-1.5 rounded-[7px] border border-[#BEC9C6] px-3 py-2 text-[12px] font-semibold text-[#00433C] hover:bg-[#F2F4F2]" aria-label={`Edit ${row.name}`}>
                         <Pencil className="w-3.5 h-3.5" /> Edit
                       </button>
