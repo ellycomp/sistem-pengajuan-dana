@@ -114,22 +114,6 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  if (input.action === "update_niy") {
-    const userId = String(input.userId ?? "").trim();
-    const niy = String(input.niy ?? "").trim();
-    if (!userId) return json({ error: "ID akun tidak ditemukan." }, 400);
-    const { data: updated, error: updateError } = await admin
-      .from("profiles")
-      .update({ niy })
-      .eq("id", userId)
-      .select("id, niy")
-      .single();
-    if (updateError || !updated) {
-      return json({ error: updateError?.message ?? "NIY gagal diperbarui." }, 400);
-    }
-    return json({ profile: updated });
-  }
-
   if (input.action !== "create") return json({ error: "Aksi belum didukung." }, 400);
   const name = String(input.name ?? "").trim();
   const email = String(input.email ?? "").trim().toLowerCase();
@@ -165,10 +149,9 @@ Deno.serve(async (req: Request) => {
       role,
       title,
       unit,
-      ...(niy ? { niy } : {}),
       avatar,
     })
-    .select("id, name, email, role, title, unit, niy, avatar")
+    .select("id, name, email, role, title, unit, avatar")
     .single();
 
   if (profileError || !profile) {
