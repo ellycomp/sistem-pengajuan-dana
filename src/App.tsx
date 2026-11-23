@@ -465,24 +465,37 @@ export default function App() {
     const safeRole: RoleId =
       accountId === currentUser.id ? 'direktur' : payload.role;
 
-    // Simpan data profil ke Supabase terlebih dahulu agar perubahan NIY
-    // tidak hanya tersimpan sementara di memori aplikasi.
+    // Perubahan profil dilakukan melalui Edge Function dengan service role.
+    // Tabel profiles memang menolak UPDATE langsung dari browser (RLS).
     const profileUpdates = {
       name: payload.name.trim(),
       role: safeRole,
       title: payload.title.trim() || target.title,
       unit: payload.unit.trim() || target.unit,
-      niy: payload.niy.trim() || null,
+      niy: payload.niy.trim(),
     };
-    const { error: profileUpdateError } = await supabase
-      .from('profiles')
-      .update(profileUpdates)
-      .eq('id', accountId);
+    const { data: updateData, error: profileUpdateError } = await supabase.functions.invoke('manage-staff-account', {
+      body: {
+        action: 'update_profile',
+        accountId,
+        ...profileUpdates,
+      },
+    });
 
-    if (profileUpdateError) {
+    if (profileUpdateError || updateData?.error) {
+      let detail = updateData?.detail ? String(updateData.detail) : '';
+      if (profileUpdateError && !detail) {
+        try {
+          const response = (profileUpdateError as any).context;
+          if (response && typeof response.clone === 'function') {
+            const body = await response.clone().json();
+            detail = body?.detail || body?.message || body?.error || '';
+          }
+        } catch { /* gunakan pesan SDK */ }
+      }
       return {
         ok: false,
-        error: `Gagal menyimpan perubahan profil: ${profileUpdateError.message}`,
+        error: updateData?.error || `Gagal menyimpan perubahan profil: ${detail || profileUpdateError?.message || 'Kesalahan server'}`,
       };
     }
 
