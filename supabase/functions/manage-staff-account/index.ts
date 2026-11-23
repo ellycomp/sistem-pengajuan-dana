@@ -20,31 +20,37 @@ Deno.serve(async (req: Request) => {
   if (!authHeader?.startsWith("Bearer ")) return json({ error: "Sesi login tidak ditemukan." }, 401);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+  if (!supabaseUrl || !serviceRoleKey) {
     console.error("Missing Edge Function environment variable", {
       hasUrl: Boolean(supabaseUrl),
-      hasAnonOrPublishableKey: Boolean(anonKey),
       hasServiceRoleKey: Boolean(serviceRoleKey),
     });
     return json({ error: "Konfigurasi server belum lengkap. Periksa Secrets Edge Function." }, 500);
   }
 
   const token = authHeader.slice("Bearer ".length);
-  // Verify the caller with their own access token, then read their own profile
-  // under the authenticated role. This avoids depending on service-role profile lookup.
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
+  // Validate the caller's access token with Supabase Auth using the service client.
+  // The service role is never accepted as the caller identity; only the supplied
+  // user's access token is verified and used to identify the caller.
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: authData, error: authError } = await userClient.auth.getUser(token);
+  const { data: authData, error: authError } = await admin.auth.getUser(token);
   if (authError || !authData.user) {
-    console.error("manage-staff-account auth validation failed", authError?.message);
-    return json({ error: "Sesi login tidak valid." }, 401);
+    console.error("manage-staff-account auth validation failed", {
+      message: authError?.message ?? "No authenticated user returned",
+      status: (authError as any)?.status ?? null,
+      code: (authError as any)?.code ?? null,
+    });
+    return json({
+      error: "Sesi login tidak valid. Silakan keluar dari aplikasi, masuk kembali, lalu coba lagi.",
+      detail: authError?.message ?? "Token tidak menghasilkan pengguna yang valid.",
+      code: (authError as any)?.code ?? null,
+    }, 401);
   }
 
-  const { data: caller, error: callerError } = await userClient
+  const { data: caller, error: callerError } = await admin
     .from("profiles")
     .select("id, role")
     .eq("id", authData.user.id)
@@ -66,10 +72,6 @@ Deno.serve(async (req: Request) => {
       role: caller?.role ?? null,
     }, 403);
   }
-
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
 
   let input: Record<string, unknown>;
   try {
