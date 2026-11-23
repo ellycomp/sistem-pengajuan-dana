@@ -921,6 +921,18 @@ export default function App() {
     return { ok: true };
   };
 
+  const handleDeleteBudgetLine = async (id: string): Promise<{ ok: boolean; error?: string }> => {
+    if (currentUser.role !== 'direktur' && currentUser.role !== 'bendahara-umum') {
+      return { ok: false, error: 'Hanya Direktur atau Bendahara Umum yang dapat menghapus pos anggaran.' };
+    }
+    if (!supabase) return { ok: false, error: 'Koneksi database tidak tersedia.' };
+    const { error } = await supabase.rpc('delete_budget_line', { p_id: id });
+    if (error) return { ok: false, error: error.message };
+    setBudgetLines((prev) => prev.filter((line) => line.id !== id));
+    setToastMessage('Pos anggaran berhasil dihapus.');
+    return { ok: true };
+  };
+
   const handleResetData = () => {
     setRequests(INITIAL_REQUESTS);
     setBudgetLines(INITIAL_BUDGET_LINES);
@@ -1060,7 +1072,7 @@ export default function App() {
           ))}
 
         {activeTab === 'anggaran' && (
-          <BudgetView budgetLines={budgetLines} requests={requests} currentUser={currentUser} onAddBudgetLine={handleAddBudgetLine} onUpdateBudgetLine={handleUpdateBudgetLine} />
+          <BudgetView budgetLines={budgetLines} requests={requests} currentUser={currentUser} onAddBudgetLine={handleAddBudgetLine} onUpdateBudgetLine={handleUpdateBudgetLine} onDeleteBudgetLine={handleDeleteBudgetLine} />
         )}
 
         {activeTab === 'riwayat' && (
