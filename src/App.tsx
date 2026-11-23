@@ -280,7 +280,9 @@ export default function App() {
         if (active) setIsLoggedIn(false);
         return;
       }
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+      // Perubahan token saat tab/aplikasi kembali aktif tidak boleh memuat ulang profil,
+      // karena itu dapat mengembalikan pengguna ke tab awal dan mengganti pengajuan terpilih.
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         void loadAuthenticatedProfile(session.user.id);
       }
     });
