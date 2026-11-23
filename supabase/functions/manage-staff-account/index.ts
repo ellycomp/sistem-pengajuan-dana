@@ -114,6 +114,42 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  if (input.action === "update_profile") {
+    const accountId = String(input.accountId ?? "").trim();
+    const name = String(input.name ?? "").trim();
+    const role = String(input.role ?? "").trim();
+    const title = String(input.title ?? "").trim();
+    const unit = String(input.unit ?? "").trim();
+    const niy = String(input.niy ?? "").trim();
+    const allowedRoles = ["guru", "sarana", "bendahara-sekolah", "bendahara-umum", "direktur"];
+
+    if (!accountId || !name || !title || !unit || !allowedRoles.includes(role)) {
+      return json({ error: "Data profil tidak lengkap atau peran tidak valid." }, 400);
+    }
+
+    const { data: updatedProfile, error: updateError } = await admin
+      .from("profiles")
+      .update({ name, role, title, unit, niy: niy || null })
+      .eq("id", accountId)
+      .select("id, name, email, role, title, unit, niy, avatar")
+      .maybeSingle();
+
+    if (updateError || !updatedProfile) {
+      console.error("Profile update failed", {
+        accountId,
+        message: updateError?.message ?? "Profil tidak ditemukan.",
+        code: updateError?.code ?? null,
+      });
+      return json({
+        error: "Perubahan profil gagal disimpan ke database.",
+        detail: updateError?.message ?? "Profil tidak ditemukan.",
+        code: updateError?.code ?? null,
+      }, 500);
+    }
+
+    return json({ success: true, profile: updatedProfile });
+  }
+
   if (input.action !== "create") return json({ error: "Aksi belum didukung." }, 400);
   const name = String(input.name ?? "").trim();
   const email = String(input.email ?? "").trim().toLowerCase();
@@ -149,9 +185,10 @@ Deno.serve(async (req: Request) => {
       role,
       title,
       unit,
+      niy: niy || null,
       avatar,
     })
-    .select("id, name, email, role, title, unit, avatar")
+    .select("id, name, email, role, title, unit, niy, avatar")
     .single();
 
   if (profileError || !profile) {
