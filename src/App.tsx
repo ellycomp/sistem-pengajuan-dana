@@ -140,6 +140,12 @@ export default function App() {
     }
 
     let active = true;
+    // Recovery links must stay on the login screen so LoginView can show the
+    // new-password form. Do not treat the temporary recovery session as a normal login.
+    const isRecoveryUrl = () =>
+      window.location.hash.includes('type=recovery') ||
+      new URLSearchParams(window.location.search).has('code');
+
     const loadAuthenticatedProfile = async (userId: string, initializeNavigation = false) => {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -271,6 +277,10 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
+      if (isRecoveryUrl()) {
+        setIsLoggedIn(false);
+        return;
+      }
       if (error) {
         setIsLoggedIn(false);
         setToastMessage('Tidak dapat memulihkan sesi. Silakan masuk kembali.');
@@ -284,6 +294,10 @@ export default function App() {
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsLoggedIn(false);
+        return;
+      }
       if (event === 'SIGNED_OUT' || !session) {
         if (active) setIsLoggedIn(false);
         return;
