@@ -99,7 +99,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
     e.preventDefault();
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
-      setErrorMsg('Silakan masukkan email sekolah atau NIY pegawai.');
+      setErrorMsg('Silakan masukkan email akun Anda.');
       return;
     }
     if (!password) {
@@ -132,7 +132,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, name, email, role, title, unit, avatar')
+        .select('*')
         .eq('id', data.user.id)
         .single();
 
@@ -266,7 +266,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
                   htmlFor="web-email"
                   className="font-label text-[14px] leading-[20px] font-semibold text-[#191C1B]"
                 >
-                  Email atau NIY
+                  Email
                 </label>
                 <input
                   id="web-email"
