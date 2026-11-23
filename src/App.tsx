@@ -407,7 +407,7 @@ export default function App() {
       const status = (error as any)?.context?.status;
       const message = serverMessage || error?.message || 'Gagal membuat akun.';
       const statusText = status ? ` (HTTP ${status})` : '';
-      return { ok: false, error: `${message}${statusText}${serverDetail ? ` — ${serverDetail}` : ''}`;
+      return { ok: false, error: `${message}${statusText}${serverDetail ? ` — ${serverDetail}` : ''}` };
     }
     const created = data.profile;
     const newAccount: UserAccount = {
