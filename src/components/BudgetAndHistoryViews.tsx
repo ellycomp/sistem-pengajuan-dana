@@ -37,9 +37,10 @@ interface BudgetViewProps {
   currentUser: UserProfile;
   onAddBudgetLine: (payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => Promise<{ ok: boolean; error?: string }>;
   onUpdateBudgetLine: (id: string, payload: Omit<BudgetLine, 'id' | 'usedAmount'>) => Promise<{ ok: boolean; error?: string }>;
+  onDeleteBudgetLine: (id: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
-export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine, onUpdateBudgetLine }: BudgetViewProps) {
+export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine, onUpdateBudgetLine, onDeleteBudgetLine }: BudgetViewProps) {
   const canManageBudget = currentUser.role === 'direktur' || currentUser.role === 'bendahara-umum';
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
@@ -189,6 +190,7 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
                     <td className="px-4 py-3.5 font-body text-[14px] text-[#191C1B] text-right tabular-nums whitespace-nowrap">{formatRupiah(row.usedAmount)}</td>
                     <td className="px-4 py-3.5 font-body text-[14px] text-[#92400E] text-right tabular-nums whitespace-nowrap">{formatRupiah(row.pendingAmount)}</td>
                     {canManageBudget && <td className="px-4 py-3.5 text-center">
+                      <div className="inline-flex items-center justify-center gap-2">
                       <button type="button" onClick={() => {
                         setEditingBudgetId(row.id);
                         setNewBudgetCode(row.code);
@@ -201,6 +203,14 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
                       }} className="inline-flex items-center gap-1.5 rounded-[7px] border border-[#BEC9C6] px-3 py-2 text-[12px] font-semibold text-[#00433C] hover:bg-[#F2F4F2]" aria-label={`Edit ${row.name}`}>
                         <Pencil className="w-3.5 h-3.5" /> Edit
                       </button>
+                      <button type="button" onClick={async () => {
+                        if (!window.confirm(`Hapus pos anggaran "${row.name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+                        const result = await onDeleteBudgetLine(row.id);
+                        if (!result.ok) window.alert(result.error || 'Pos anggaran gagal dihapus.');
+                      }} className="inline-flex items-center gap-1.5 rounded-[7px] border border-[#BA1A1A]/40 px-3 py-2 text-[12px] font-semibold text-[#BA1A1A] hover:bg-[#FFF0EF]" aria-label={`Hapus ${row.name}`}>
+                        <Trash2 className="w-3.5 h-3.5" /> Hapus
+                      </button>
+                      </div>
                     </td>}
                   </tr>
                 ))}
