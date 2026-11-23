@@ -798,7 +798,7 @@ export default function App() {
       budgetCategoryName: budget?.name || 'Operasional',
       unit: payload.unit,
       requesterName: currentUser.name,
-      requesterNiy: currentUser.niy,
+      requesterNiy: currentUser.niy || '',
       requesterRole: payload.requesterRole,
       submittedDate: shortDate,
       targetDate: payload.targetDate,
