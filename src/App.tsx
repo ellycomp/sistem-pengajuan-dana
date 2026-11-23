@@ -657,23 +657,31 @@ export default function App() {
     }
   };
 
-  const handleUpdateRevision = (
+  const handleUpdateRevision = async (
     requestId: string,
     updates: Pick<FundRequest, 'title' | 'targetDate' | 'attachmentName' | 'items'>
-  ) => {
+  ): Promise<{ ok: boolean; error?: string }> => {
     const targetRequest = requests.find((req) => req.id === requestId);
     if (!targetRequest || targetRequest.status !== 'revisi' || targetRequest.requesterName !== currentUser.name) {
-      setToastMessage('Hanya pengaju yang bersangkutan yang dapat mengubah pengajuan revisi.');
-      return;
+      return { ok: false, error: 'Hanya pengaju yang bersangkutan yang dapat mengubah pengajuan revisi.' };
     }
-    setRequests((prev) =>
-      prev.map((req) =>
-        req.id === requestId && req.status === 'revisi'
-          ? { ...req, ...updates }
-          : req
-      )
-    );
-    setToastMessage('Perbaikan pengajuan berhasil disimpan. Silakan ajukan ulang setelah selesai.');
+    if (!supabase) return { ok: false, error: 'Koneksi database belum tersedia.' };
+    const { error } = await supabase.rpc('save_fund_request_revision', {
+      p_request_id: requestId,
+      p_title: updates.title,
+      p_target_date: updates.targetDate,
+      p_attachment_name: updates.attachmentName,
+      p_items: updates.items.map((item) => ({
+        id: item.id, name: item.name, quantity: item.quantity,
+        unitLabel: item.unitLabel, unitPrice: item.unitPrice,
+      })),
+    });
+    if (error) return { ok: false, error: error.message };
+    setRequests((prev) => prev.map((req) =>
+      req.id === requestId && req.status === 'revisi' ? { ...req, ...updates } : req
+    ));
+    setToastMessage('Perbaikan revisi berhasil disimpan ke database. Silakan ajukan ulang.');
+    return { ok: true };
   };
 
   const handleResubmit = async (requestId: string) => {
