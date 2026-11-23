@@ -113,13 +113,17 @@ export default function App() {
     accounts.find((a) => a.id === currentAccountId) || accounts[0];
   const currentRole = currentAccount.role;
 
-  const [activeTab, setActiveTab] = useState<AppNavTab>(() =>
-    currentRole === 'guru'
-      ? initial.requests.length > 0
-        ? 'detail'
-        : 'pengajuan'
-      : 'persetujuan'
-  );
+  const [activeTab, setActiveTab] = useState<AppNavTab>(() => {
+    // Simpan halaman terakhir agar tetap sama bila Android membuang WebView di latar belakang.
+    try {
+      const saved = sessionStorage.getItem('sit_qudwah_active_tab');
+      const validTabs: AppNavTab[] = ['pengajuan', 'persetujuan', 'anggaran', 'riwayat', 'profil', 'detail'];
+      if (saved && validTabs.includes(saved as AppNavTab)) return saved as AppNavTab;
+    } catch { /* gunakan halaman awal */ }
+    return currentRole === 'guru'
+      ? (initial.requests.length > 0 ? 'detail' : 'pengajuan')
+      : 'persetujuan';
+  });
   const [selectedRequestId, setSelectedRequestId] = useState<string>(
     initial.requests[0]?.id || ''
   );
@@ -258,9 +262,6 @@ export default function App() {
       // Tentukan tab awal hanya saat sesi pertama kali dipulihkan.
       // Event autentikasi berikutnya (misalnya setelah kembali dari aplikasi lain)
       // tidak boleh mengubah halaman yang sedang dibuka pengguna.
-      if (initializeNavigation) {
-        setActiveTab(account.role === 'guru' ? 'pengajuan' : 'persetujuan');
-      }
       if (initializeNavigation && account.role !== 'guru' && account.role !== 'direktur') {
         setSelectedTier(account.role);
       }
@@ -297,6 +298,10 @@ export default function App() {
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    try { sessionStorage.setItem('sit_qudwah_active_tab', activeTab); } catch { /* storage may be unavailable */ }
+  }, [activeTab]);
 
   useEffect(() => {
     try {
