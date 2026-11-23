@@ -398,6 +398,7 @@ interface ProfileViewProps {
     role: RoleId;
     title: string;
     unit: string;
+    niy: string;
     email: string;
     password: string;
   }) => Promise<{ ok: boolean; error?: string }>;
@@ -408,6 +409,7 @@ interface ProfileViewProps {
       role: RoleId;
       title: string;
       unit: string;
+      niy: string;
       email: string;
       password: string;
     }
@@ -451,6 +453,7 @@ export function ProfileView({
   const [newRole, setNewRole] = useState<RoleId>('guru');
   const [newTitle, setNewTitle] = useState<string>(ROLE_DEFAULT_TITLES.guru);
   const [newUnit, setNewUnit] = useState<string>(SCHOOL_UNITS[0]);
+  const [newNiy, setNewNiy] = useState<string>('');
   const [newEmail, setNewEmail] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
@@ -468,6 +471,7 @@ export function ProfileView({
   const [editRole, setEditRole] = useState<RoleId>('guru');
   const [editTitle, setEditTitle] = useState<string>('');
   const [editUnit, setEditUnit] = useState<string>(SCHOOL_UNITS[0]);
+  const [editNiy, setEditNiy] = useState<string>('');
   const [editEmail, setEditEmail] = useState<string>('');
   const [editPassword, setEditPassword] = useState<string>('');
   const [editError, setEditError] = useState<string>('');
@@ -483,6 +487,7 @@ export function ProfileView({
     setEditRole(acc.role);
     setEditTitle(acc.title);
     setEditUnit(acc.unit);
+    setEditNiy(acc.niy || '');
     setEditEmail(acc.email);
     setEditPassword(acc.password);
     setEditError('');
@@ -497,8 +502,8 @@ export function ProfileView({
     e.preventDefault();
     if (!isDirector || !editingAccount) return;
 
-    if (!editName.trim() || !editEmail.trim() || !editPassword.trim()) {
-      setEditError('Nama lengkap, email, dan kata sandi wajib diisi.');
+    if (!editName.trim() || !editEmail.trim() || !editNiy.trim() || !editPassword.trim()) {
+      setEditError('Nama lengkap, NIY, email, dan kata sandi wajib diisi.');
       return;
     }
     if (editPassword.trim().length < 6) {
@@ -511,6 +516,7 @@ export function ProfileView({
       role: editRole,
       title: editTitle.trim() || ROLE_DEFAULT_TITLES[editRole],
       unit: editUnit.trim() || 'SIT Qudwah',
+      niy: editNiy.trim(),
       email: editEmail.trim(),
       password: editPassword.trim(),
     });
@@ -528,8 +534,8 @@ export function ProfileView({
     e.preventDefault();
     if (!isDirector) return;
 
-    if (!newName.trim() || !newEmail.trim() || !newPassword.trim()) {
-      setFormError('Nama lengkap, email, dan kata sandi wajib diisi.');
+    if (!newName.trim() || !newNiy.trim() || !newEmail.trim() || !newPassword.trim()) {
+      setFormError('Nama lengkap, NIY, email, dan kata sandi wajib diisi.');
       return;
     }
     if (newPassword.trim().length < 6) {
@@ -543,6 +549,7 @@ export function ProfileView({
       role: newRole,
       title: newTitle.trim() || ROLE_DEFAULT_TITLES[newRole],
       unit: newUnit.trim() || 'SIT Qudwah',
+      niy: newNiy.trim(),
       email: newEmail.trim(),
       password: newPassword.trim(),
     });
@@ -554,6 +561,7 @@ export function ProfileView({
 
     setNewName('');
     setNewEmail('');
+    setNewNiy('');
     setNewPassword('');
     setFormError('');
     setShowAddForm(false);
@@ -899,6 +907,11 @@ export function ProfileView({
                   </div>
 
                   <div className="flex flex-col gap-1">
+                    <label htmlFor="acc-niy" className="font-label text-[13px] font-semibold text-[#191C1B]">NIY (Nomor Induk Yayasan) <span className="text-red-600">*</span></label>
+                    <input id="acc-niy" type="text" required value={newNiy} onChange={(e) => setNewNiy(e.target.value)} placeholder="Masukkan nomor induk yayasan" className="w-full rounded-[8px] border border-[#BEC9C6] bg-white px-3 py-2 text-[14px]" />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
                     <label
                       htmlFor="acc-email"
                       className="font-label text-[13px] font-semibold text-[#191C1B]"
@@ -1165,6 +1178,11 @@ export function ProfileView({
                   <option value="Keuangan Yayasan">Keuangan Yayasan</option>
                   <option value="Pimpinan Yayasan">Pimpinan Yayasan</option>
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label htmlFor="edit-acc-niy" className="font-label text-[13px] font-semibold text-[#191C1B]">NIY (Nomor Induk Yayasan) <span className="text-red-600">*</span></label>
+                <input id="edit-acc-niy" type="text" required value={editNiy} onChange={(e) => setEditNiy(e.target.value)} className="w-full rounded-[8px] border border-[#BEC9C6] bg-white px-3 py-2 text-[14px]" />
               </div>
 
               <div className="flex flex-col gap-1">
