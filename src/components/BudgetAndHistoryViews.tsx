@@ -54,7 +54,7 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
     'Humas dan IT': '52',
     'Sarpras': '53',
     'Kesiswaan': '54',
-    'Kurikulum': '55',
+    'Akademik': '55',
     'Dapur': '56',
     'Perpustakaan': '57',
     'Kesehatan': '58',
