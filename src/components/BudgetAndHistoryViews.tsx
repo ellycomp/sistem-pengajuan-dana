@@ -30,6 +30,7 @@ import {
   UserProfile,
 } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
+import { supabase } from '../lib/supabase';
 
 interface BudgetViewProps {
   budgetLines: BudgetLine[];
@@ -445,6 +446,45 @@ export function ProfileView({
   const isDirector = currentUser.role === 'direktur';
   const [backupError, setBackupError] = useState<string>('');
   const [logoMessage, setLogoMessage] = useState<string>('');
+  const [newOwnPassword, setNewOwnPassword] = useState<string>('');
+  const [confirmOwnPassword, setConfirmOwnPassword] = useState<string>('');
+  const [passwordBusy, setPasswordBusy] = useState<boolean>(false);
+  const [passwordMessage, setPasswordMessage] = useState<string>('');
+  const [passwordError, setPasswordError] = useState<string>('');
+
+  const handleChangeOwnPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordMessage('');
+    setPasswordError('');
+    if (!supabase) {
+      setPasswordError('Koneksi server belum tersedia. Coba lagi nanti.');
+      return;
+    }
+    if (newOwnPassword.length < 8) {
+      setPasswordError('Kata sandi baru minimal 8 karakter.');
+      return;
+    }
+    if (newOwnPassword !== confirmOwnPassword) {
+      setPasswordError('Konfirmasi kata sandi tidak sama.');
+      return;
+    }
+    setPasswordBusy(true);
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session) {
+      setPasswordBusy(false);
+      setPasswordError('Sesi login tidak valid. Silakan keluar dan masuk kembali.');
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: newOwnPassword });
+    setPasswordBusy(false);
+    if (error) {
+      setPasswordError('Gagal mengganti kata sandi: ' + error.message);
+      return;
+    }
+    setNewOwnPassword('');
+    setConfirmOwnPassword('');
+    setPasswordMessage('Kata sandi berhasil diperbarui.');
+  };
   const [showAddForm, setShowAddForm] = useState<boolean>(() => {
     try { return sessionStorage.getItem('sit_qudwah_show_add_user_form') === 'true'; }
     catch { return false; }
@@ -619,6 +659,36 @@ export function ProfileView({
             <span>Keluar ke Halaman Login</span>
           </button>
         </section>
+
+        {!isDirector && (
+          <section className="rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-5 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-[#00433C]" aria-hidden="true" />
+              <h2 className="font-title text-[16px] font-semibold text-[#191C1B]">Ganti Kata Sandi Saya</h2>
+            </div>
+            <p className="font-body text-[13px] text-[#3F4947]">
+              Ubah kata sandi akun Anda sendiri. Perubahan disimpan langsung ke server dan tidak memengaruhi akun pengguna lain.
+            </p>
+            <form onSubmit={handleChangeOwnPassword} className="flex flex-col gap-3 max-w-lg">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="own-new-password" className="font-label text-[13px] font-semibold text-[#191C1B]">Kata Sandi Baru</label>
+                <input id="own-new-password" type="password" autoComplete="new-password" value={newOwnPassword} onChange={(e) => setNewOwnPassword(e.target.value)} placeholder="Minimal 8 karakter" className="w-full rounded-[8px] border border-[#BEC9C6] bg-white px-3 py-2.5 text-sm focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="own-confirm-password" className="font-label text-[13px] font-semibold text-[#191C1B]">Ulangi Kata Sandi Baru</label>
+                <input id="own-confirm-password" type="password" autoComplete="new-password" value={confirmOwnPassword} onChange={(e) => setConfirmOwnPassword(e.target.value)} placeholder="Ketik ulang kata sandi baru" className="w-full rounded-[8px] border border-[#BEC9C6] bg-white px-3 py-2.5 text-sm focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]" />
+              </div>
+              {passwordError && <p role="alert" className="text-sm text-red-700">{passwordError}</p>}
+              {passwordMessage && <p role="status" className="text-sm text-green-700">{passwordMessage}</p>}
+              <div>
+                <button type="submit" disabled={passwordBusy} className="inline-flex items-center gap-2 rounded-[8px] bg-[#00433C] text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50">
+                  <Lock className="w-4 h-4" aria-hidden="true" />
+                  {passwordBusy ? 'Menyimpan...' : 'Simpan Kata Sandi Baru'}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
 
         {/* Local Backup & Restore (Gratis / Penyimpanan Perangkat) */}
         <section className="rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-5 flex flex-col gap-3">
