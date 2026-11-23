@@ -1056,6 +1056,7 @@ export default function App() {
           (activeRequest ? (
             <RequestDetailView
               request={activeRequest}
+              accounts={accounts}
               currentRole={currentRole}
               currentUserName={currentUser.name}
               onBack={() => setActiveTab('pengajuan')}
