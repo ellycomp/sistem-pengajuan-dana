@@ -65,7 +65,13 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
     if (!prefix) return '';
     const highest = budgetLines.reduce((max, line) => {
       if (line.unit !== newBudgetUnit) return max;
-      const match = line.code.match(new RegExp('^POS-' + prefix + '(\\d+)(() => budgetLines.map((line) => ({
+      const match = line.code.match(new RegExp('^POS-' + prefix + '(\\d+)$'));
+      return match ? Math.max(max, Number(match[1])) : max;
+    }, 0);
+    return 'POS-' + prefix + String(highest + 1).padStart(2, '0');
+  }, [budgetLines, newBudgetUnit]);
+
+  const rows = useMemo(() => budgetLines.map((line) => ({
     ...line,
     pendingAmount: requests
       .filter((request) => request.budgetCategoryId === line.id && request.status === 'diproses')
