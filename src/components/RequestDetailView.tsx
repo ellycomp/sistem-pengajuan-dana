@@ -19,7 +19,7 @@ import {
   getStatusLabel,
   TIER_CONFIGS,
 } from '../data/seedData';
-import { FundRequest, LineItem, RoleId, UserAccount } from '../types/kassekolah';
+import { FundRequest, LineItem, RoleId } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
 
 type Html2PdfWorker = {
@@ -44,7 +44,6 @@ const loadHtml2Pdf = async (): Promise<Html2PdfFactory> => {
 
 interface RequestDetailViewProps {
   request: FundRequest;
-  accounts: UserAccount[];
   currentRole: RoleId;
   currentUserName: string;
   onBack: () => void;
@@ -56,7 +55,6 @@ interface RequestDetailViewProps {
 
 export function RequestDetailView({
   request,
-  accounts,
   currentRole,
   currentUserName,
   onBack,
@@ -105,24 +103,11 @@ export function RequestDetailView({
   const treasurerSignerSubLabel = isAboveTwoMillion
     ? 'Otorisasi di atas Rp 2.000.000'
     : 'Otorisasi maksimal Rp 2.000.000';
-  const treasurerSignerStage = isAboveTwoMillion
-    ? stageBendaharaUmum
-    : stageBendaharaSekolah;
-  const treasurerSignerName = treasurerSignerStage?.personName ||
-    (isAboveTwoMillion ? 'Bendahara Umum' : 'Bendahara Sekolah');
-  const treasurerSignerNiy =
-    treasurerSignerStage?.personNiy ||
-    accounts.find((account) =>
-      account.name === treasurerSignerStage?.personName &&
-      account.role === treasurerSignerStage?.roleKey
-    )?.niy || '';
-  const directorSignerName = stageDirektur?.personName || 'Direktur SIT Qudwah';
-  const directorSignerNiy =
-    stageDirektur?.personNiy ||
-    accounts.find((account) =>
-      account.name === stageDirektur?.personName &&
-      account.role === stageDirektur?.roleKey
-    )?.niy || '';
+  const treasurerSignerName = isAboveTwoMillion
+    ? stageBendaharaUmum?.personName || 'Bendahara Umum'
+    : stageBendaharaSekolah?.personName || 'Bendahara Sekolah';
+  const directorSignerName =
+    stageDirektur?.personName || 'Direktur SIT Qudwah';
 
   const completedCount = request.stages.filter(
     (s) => s.state === 'done'
@@ -1086,7 +1071,6 @@ export function RequestDetailView({
                     <p className="font-semibold text-[#191C1B] underline">
                       {request.requesterName}
                     </p>
-                    <p className="text-[11px] text-[#3F4947]">NIY: {request.requesterNiy || 'Belum tersedia'}</p>
                     <p className="text-[11px] text-[#3F4947]">
                       {request.requesterRole}
                     </p>
@@ -1103,7 +1087,6 @@ export function RequestDetailView({
                     <p className="font-semibold text-[#191C1B] underline">
                       {treasurerSignerName}
                     </p>
-                    <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy || 'Belum tersedia'}</p>
                     <p className="text-[11px] text-[#3F4947]">
                       {treasurerSignerSubLabel}
                     </p>
@@ -1118,7 +1101,6 @@ export function RequestDetailView({
                     <p className="font-semibold text-[#191C1B] underline">
                       {directorSignerName}
                     </p>
-                    <p className="text-[11px] text-[#3F4947]">NIY: {directorSignerNiy || 'Belum tersedia'}</p>
                     <p className="text-[11px] text-[#3F4947]">
                       Direktur SIT Qudwah Sungai Rengit
                     </p>
@@ -1282,7 +1264,6 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {request.requesterName}
             </p>
-            <p className="text-[11px] text-[#3F4947]">NIY: {request.requesterNiy || 'Belum tersedia'}</p>
             <p className="text-[11px] text-[#3F4947]">
               {request.requesterRole}
             </p>
@@ -1299,7 +1280,6 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {treasurerSignerName}
             </p>
-                    <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy || 'Belum tersedia'}</p>
             <p className="text-[11px] text-[#3F4947]">
               {treasurerSignerSubLabel}
             </p>
@@ -1312,7 +1292,6 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {directorSignerName}
             </p>
-                    <p className="text-[11px] text-[#3F4947]">NIY: {directorSignerNiy || 'Belum tersedia'}</p>
             <p className="text-[11px] text-[#3F4947]">
               Direktur SIT Qudwah Sungai Rengit
             </p>
