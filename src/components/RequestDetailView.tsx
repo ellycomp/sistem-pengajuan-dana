@@ -79,6 +79,7 @@ export function RequestDetailView({
   const [savingRevision, setSavingRevision] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
+  const [uploadedPdfUrl, setUploadedPdfUrl] = useState('');
   const pdfDocumentRef = useRef<HTMLDivElement>(null);
   const [revisionTitle, setRevisionTitle] = useState(request.title);
   const [revisionTargetDate, setRevisionTargetDate] = useState(request.targetDate);
@@ -852,6 +853,7 @@ export function RequestDetailView({
                       return;
                     }
                     setUploadingPdf(true);
+                    setUploadedPdfUrl('');
                     setUploadMessage('Membuat PDF dari dokumen pengajuan...');
                     try {
                       const html2pdf = await loadHtml2Pdf();
@@ -865,8 +867,9 @@ export function RequestDetailView({
                       const file = new File([blob], 'Pengajuan.pdf', { type: 'application/pdf' });
                       const result = await onUploadPdf(file);
                       setUploadMessage(result.ok
-                        ? 'PDF berhasil dibuat otomatis dan diunggah ke Google Drive.'
+                        ? 'PDF berhasil dibuat dan dikirim ke Google Drive.'
                         : result.error || 'Upload PDF gagal.');
+                      if (result.ok && result.url) setUploadedPdfUrl(result.url);
                     } catch (error) {
                       setUploadMessage(error instanceof Error ? error.message : 'Gagal membuat atau mengunggah PDF.');
                     } finally {
@@ -896,7 +899,10 @@ export function RequestDetailView({
                 </button>
               </div>
               {uploadMessage && (
-                <p role="status" className="px-6 pb-3 text-[12px] text-[#00433C]">{uploadMessage}</p>
+                <div role="status" className="px-6 pb-3 text-[12px] text-[#00433C]">
+                  <p>{uploadMessage}</p>
+                  {uploadedPdfUrl && <a href={uploadedPdfUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block font-semibold underline">Buka PDF yang baru diunggah</a>}
+                </div>
               )}
             </div>
 
