@@ -143,7 +143,7 @@ export default function App() {
     const loadAuthenticatedProfile = async (userId: string, initializeNavigation = false) => {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, name, email, role, title, unit, avatar')
+        .select('id, name, email, role, title, unit, avatar, niy')
         .eq('id', userId)
         .single();
 
@@ -227,7 +227,7 @@ export default function App() {
 
       const { data: profileRows, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, name, email, role, title, unit, avatar')
+        .select('id, name, email, role, title, unit, avatar, niy')
         .order('name');
       if (profilesError) {
         setToastMessage(`Daftar petugas belum dapat dimuat: ${profilesError.message}`);
@@ -239,6 +239,7 @@ export default function App() {
         role: row.role,
         title: row.title || '',
         unit: row.unit || '',
+        niy: row.niy || '',
         avatar: row.avatar || makeAvatarInitials(row.name),
         password: '',
         isDefault: false,
@@ -250,6 +251,7 @@ export default function App() {
         role: profile.role,
         title: profile.title || '',
         unit: profile.unit || '',
+        niy: profile.niy || '',
         avatar: profile.avatar || makeAvatarInitials(profile.name),
         password: '',
         isDefault: false,
@@ -365,6 +367,7 @@ export default function App() {
     unit: string;
     email: string;
     password: string;
+    niy: string;
   }): Promise<{ ok: boolean; error?: string }> => {
     if (currentUser.role !== 'direktur') {
       return { ok: false, error: 'Hanya Direktur yang dapat menambahkan akun.' };
@@ -379,6 +382,7 @@ export default function App() {
         role: payload.role,
         title: payload.title.trim(),
         unit: payload.unit.trim(),
+        niy: payload.niy.trim(),
       },
     });
     if (error || data?.error) {
@@ -409,6 +413,7 @@ export default function App() {
       role: created.role,
       title: created.title,
       unit: created.unit,
+      niy: created.niy || '',
       avatar: makeAvatarInitials(created.name),
       password: '',
       isDefault: false,
@@ -418,59 +423,18 @@ export default function App() {
     return { ok: true };
   };
 
-  const handleUpdateAccount = (
-    accountId: string,
-    payload: {
-      name: string;
-      role: RoleId;
-      title: string;
-      unit: string;
-      email: string;
-      password: string;
-    }
-  ): { ok: boolean; error?: string } => {
-    if (currentUser.role !== 'direktur') {
-      return {
-        ok: false,
-        error: 'Hanya Direktur SIT Qudwah yang berwenang mengubah data akun.',
-      };
-    }
-
+  const handleUpdateAccount = async (accountId: string, payload: { name: string; role: RoleId; title: string; unit: string; email: string; password: string; niy: string }): Promise<{ ok: boolean; error?: string }> => {
+    if (currentUser.role !== 'direktur') return { ok: false, error: 'Hanya Direktur SIT Qudwah yang berwenang mengubah data akun.' };
+    if (!supabase) return { ok: false, error: 'Koneksi Supabase belum tersedia.' };
     const normalizedEmail = payload.email.trim().toLowerCase();
-    const duplicate = accounts.some(
-      (acc) => acc.id !== accountId && acc.email.toLowerCase() === normalizedEmail
-    );
-    if (duplicate) {
-      return {
-        ok: false,
-        error: 'Email tersebut sudah terdaftar pada akun lain.',
-      };
-    }
-
-    const target = accounts.find((a) => a.id === accountId);
-    if (!target) {
-      return { ok: false, error: 'Akun tidak ditemukan.' };
-    }
-
-    const safeRole: RoleId =
-      accountId === currentUser.id ? 'direktur' : payload.role;
-
-    setAccounts((prev) =>
-      prev.map((acc) =>
-        acc.id === accountId
-          ? {
-              ...acc,
-              name: payload.name.trim(),
-              role: safeRole,
-              title: payload.title.trim() || acc.title,
-              unit: payload.unit.trim() || acc.unit,
-              email: payload.email.trim(),
-              password: payload.password,
-              avatar: makeAvatarInitials(payload.name),
-            }
-          : acc
-      )
-    );
+    if (accounts.some((acc) => acc.id !== accountId && acc.email.toLowerCase() === normalizedEmail)) return { ok: false, error: 'Email tersebut sudah terdaftar pada akun lain.' };
+    const target = accounts.find((acc) => acc.id === accountId);
+    if (!target) return { ok: false, error: 'Akun tidak ditemukan.' };
+    const safeRole: RoleId = accountId === currentUser.id ? 'direktur' : payload.role;
+    const { data, error } = await supabase.functions.invoke('manage-staff-account', { body: { action: 'update_profile', accountId, name: payload.name.trim(), role: safeRole, title: payload.title.trim() || target.title, unit: payload.unit.trim() || target.unit, email: normalizedEmail, niy: payload.niy.trim() } });
+    if (error || data?.error) return { ok: false, error: data?.detail ? `${data.error || error?.message} — ${data.detail}` : data?.error || error?.message || 'Gagal memperbarui akun.' };
+    const updated = data.profile;
+    setAccounts((prev) => prev.map((acc) => acc.id === accountId ? { ...acc, name: updated.name, role: updated.role, title: updated.title, unit: updated.unit, email: updated.email, niy: updated.niy || '', avatar: makeAvatarInitials(updated.name) } : acc));
     setToastMessage(`Data akun ${payload.name.trim()} berhasil diperbarui.`);
     return { ok: true };
   };
@@ -1041,6 +1005,7 @@ export default function App() {
               request={activeRequest}
               currentRole={currentRole}
               currentUserName={currentUser.name}
+              accounts={accounts}
               onBack={() => setActiveTab('pengajuan')}
               onApproveStage={handleApproveStage}
               onRequestRevision={handleRequestRevision}
