@@ -229,7 +229,7 @@ export default function App() {
 
       const { data: profileRows, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, name, email, role, title, unit, avatar')
+        .select('id, name, email, role, title, unit, avatar, niy')
         .order('name');
       if (profilesError) {
         setToastMessage(`Daftar petugas belum dapat dimuat: ${profilesError.message}`);
