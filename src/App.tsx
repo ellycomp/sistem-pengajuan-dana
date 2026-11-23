@@ -136,7 +136,7 @@ export default function App() {
     }
 
     let active = true;
-    const loadAuthenticatedProfile = async (userId: string) => {
+    const loadAuthenticatedProfile = async (userId: string, initializeNavigation = false) => {
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('id, name, email, role, title, unit, avatar')
@@ -203,7 +203,7 @@ export default function App() {
             })),
         }));
         setRequests(cloudRequests);
-        if (cloudRequests.length > 0) {
+        if (initializeNavigation && cloudRequests.length > 0) {
           setSelectedRequestId(cloudRequests[0].id);
         }
       }
@@ -255,8 +255,13 @@ export default function App() {
       setAccounts(visibleProfiles);
       setCurrentAccountId(account.id);
       setIsLoggedIn(true);
-      setActiveTab(account.role === 'guru' ? 'pengajuan' : 'persetujuan');
-      if (account.role !== 'guru' && account.role !== 'direktur') {
+      // Tentukan tab awal hanya saat sesi pertama kali dipulihkan.
+      // Event autentikasi berikutnya (misalnya setelah kembali dari aplikasi lain)
+      // tidak boleh mengubah halaman yang sedang dibuka pengguna.
+      if (initializeNavigation) {
+        setActiveTab(account.role === 'guru' ? 'pengajuan' : 'persetujuan');
+      }
+      if (initializeNavigation && account.role !== 'guru' && account.role !== 'direktur') {
         setSelectedTier(account.role);
       }
     };
@@ -269,7 +274,7 @@ export default function App() {
         return;
       }
       if (data.session?.user) {
-        void loadAuthenticatedProfile(data.session.user.id);
+        void loadAuthenticatedProfile(data.session.user.id, true);
       } else {
         setIsLoggedIn(false);
       }
@@ -283,7 +288,7 @@ export default function App() {
       // Perubahan token saat tab/aplikasi kembali aktif tidak boleh memuat ulang profil,
       // karena itu dapat mengembalikan pengguna ke tab awal dan mengganti pengajuan terpilih.
       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-        void loadAuthenticatedProfile(session.user.id);
+        void loadAuthenticatedProfile(session.user.id, false);
       }
     });
 
