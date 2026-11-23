@@ -29,8 +29,24 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
 
   useEffect(() => {
     if (!supabase) return;
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+
+    const recoveryUrl = () =>
+      window.location.hash.includes('type=recovery') ||
+      new URLSearchParams(window.location.search).has('code');
+
+    // The recovery URL can be loaded before React subscribes to the auth event.
+    // Check the URL and current session as a fallback so the reset form is not missed.
+    if (recoveryUrl()) {
+      supabase.auth.getSession().then(({ data: sessionData }) => {
+        if (sessionData.session) {
+          setRecoveryMode(true);
+          setShowForgotHelp(false);
+        }
+      });
+    }
+
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || (recoveryUrl() && session)) {
         setRecoveryMode(true);
         setShowForgotHelp(false);
         setErrorMsg('');
