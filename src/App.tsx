@@ -460,11 +460,13 @@ export default function App() {
       return { ok: false, error: 'Akun tidak ditemukan.' };
     }
     if (!supabase) return { ok: false, error: 'Koneksi Supabase belum tersedia.' };
-    const { data: niyResult, error: niyError } = await supabase.functions.invoke('manage-staff-account', {
-      body: { action: 'update_niy', userId: accountId, niy: payload.niy.trim() },
-    });
-    if (niyError || niyResult?.error) {
-      return { ok: false, error: niyResult?.error || niyError?.message || 'NIY gagal disimpan.' };
+    if (payload.niy.trim() !== (target.niy || '').trim()) {
+      const { data: niyResult, error: niyError } = await supabase.functions.invoke('manage-staff-account', {
+        body: { action: 'update_niy', userId: accountId, niy: payload.niy.trim() },
+      });
+      if (niyError || niyResult?.error) {
+        return { ok: false, error: niyResult?.error || niyError?.message || 'NIY gagal disimpan. Periksa apakah kolom NIY sudah tersedia di database.' };
+      }
     }
 
     const safeRole: RoleId =
