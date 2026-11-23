@@ -465,24 +465,41 @@ export default function App() {
     const safeRole: RoleId =
       accountId === currentUser.id ? 'direktur' : payload.role;
 
+    // Simpan data profil ke Supabase terlebih dahulu agar perubahan NIY
+    // tidak hanya tersimpan sementara di memori aplikasi.
+    const profileUpdates = {
+      name: payload.name.trim(),
+      role: safeRole,
+      title: payload.title.trim() || target.title,
+      unit: payload.unit.trim() || target.unit,
+      niy: payload.niy.trim() || null,
+    };
+    const { error: profileUpdateError } = await supabase
+      .from('profiles')
+      .update(profileUpdates)
+      .eq('id', accountId);
+
+    if (profileUpdateError) {
+      return {
+        ok: false,
+        error: `Gagal menyimpan perubahan profil: ${profileUpdateError.message}`,
+      };
+    }
+
     setAccounts((prev) =>
       prev.map((acc) =>
         acc.id === accountId
           ? {
               ...acc,
-              name: payload.name.trim(),
-              role: safeRole,
-              title: payload.title.trim() || acc.title,
-              unit: payload.unit.trim() || acc.unit,
+              ...profileUpdates,
               niy: payload.niy.trim(),
-              email: payload.email.trim(),
-              password: payload.password,
+              email: target.email,
               avatar: makeAvatarInitials(payload.name),
             }
           : acc
       )
     );
-    setToastMessage(`Data akun ${payload.name.trim()} berhasil diperbarui.`);
+    setToastMessage(`Data akun ${payload.name.trim()} berhasil disimpan.`);
     return { ok: true };
   };
 
