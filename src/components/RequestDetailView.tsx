@@ -31,7 +31,7 @@ interface RequestDetailViewProps {
   onApproveStage: (requestId: string, note: string) => void;
   onRequestRevision: (requestId: string, note: string) => void;
   onResubmit: (requestId: string) => void;
-  onUpdateRevision: (requestId: string, updates: Pick<FundRequest, 'title' | 'targetDate' | 'attachmentName' | 'items'>) => void;
+  onUpdateRevision: (requestId: string, updates: Pick<FundRequest, 'title' | 'targetDate' | 'attachmentName' | 'items'>) => Promise<{ ok: boolean; error?: string }>;
   onUploadPdf: (file: File) => Promise<{ ok: boolean; error?: string; url?: string }>;
 }
 
@@ -55,6 +55,8 @@ export function RequestDetailView({
     useState<boolean>(false);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
   const [showRevisionEditor, setShowRevisionEditor] = useState<boolean>(false);
+  const [revisionSaveError, setRevisionSaveError] = useState('');
+  const [savingRevision, setSavingRevision] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -1260,10 +1262,17 @@ export function RequestDetailView({
 
       {showRevisionEditor && request.status === 'revisi' && (
         <div className="no-print fixed inset-0 z-50 bg-[#191C1B]/55 flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="revision-editor-title">
-          <form className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-[12px] bg-white border border-[#BEC9C6] shadow-xl p-5 sm:p-6 flex flex-col gap-4" onSubmit={(e) => {
+          <form className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-[12px] bg-white border border-[#BEC9C6] shadow-xl p-5 sm:p-6 flex flex-col gap-4" onSubmit={async (e) => {
             e.preventDefault();
-            if (!revisionTitle.trim() || revisionItems.length === 0 || revisionItems.some((item) => !item.name.trim() || item.quantity <= 0 || item.unitPrice <= 0)) return;
-            onUpdateRevision(request.id, { title: revisionTitle.trim(), targetDate: revisionTargetDate.trim(), attachmentName: revisionAttachment.trim(), items: revisionItems.map((item) => ({ ...item, name: item.name.trim() })) });
+            if (!revisionTitle.trim() || revisionItems.length === 0 || revisionItems.some((item) => !item.name.trim() || item.quantity <= 0 || item.unitPrice <= 0)) {
+              setRevisionSaveError('Lengkapi judul dan rincian barang dengan jumlah serta harga yang valid.');
+              return;
+            }
+            setSavingRevision(true);
+            setRevisionSaveError('');
+            const result = await onUpdateRevision(request.id, { title: revisionTitle.trim(), targetDate: revisionTargetDate.trim(), attachmentName: revisionAttachment.trim(), items: revisionItems.map((item) => ({ ...item, name: item.name.trim() })) });
+            setSavingRevision(false);
+            if (!result.ok) { setRevisionSaveError(result.error || 'Perubahan revisi gagal disimpan.'); return; }
             setShowRevisionEditor(false);
           }}>
             <div className="flex items-start justify-between gap-3 border-b border-[#BEC9C6] pb-3">
@@ -1271,6 +1280,7 @@ export function RequestDetailView({
               <button type="button" onClick={() => setShowRevisionEditor(false)} aria-label="Tutup" className="w-9 h-9 rounded-lg border border-[#BEC9C6] flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
             <div className="rounded-lg bg-[#FFF7E0] border border-[#F0D58A] p-3 text-sm text-[#694B00]"><strong>Catatan pemeriksa:</strong> {request.revisionNote || 'Silakan periksa kembali pengajuan.'}</div>
+            {revisionSaveError && <p role="alert" className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{revisionSaveError}</p>}
             <label className="flex flex-col gap-1 text-sm font-semibold text-[#191C1B]">Judul Pengajuan<input required value={revisionTitle} onChange={(e) => setRevisionTitle(e.target.value)} className="w-full rounded-lg border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="flex flex-col gap-1 text-sm font-semibold text-[#191C1B]">Target Pakai<input value={revisionTargetDate} onChange={(e) => setRevisionTargetDate(e.target.value)} className="w-full rounded-lg border border-[#BEC9C6] px-3 py-2 font-normal" /></label>
@@ -1286,7 +1296,7 @@ export function RequestDetailView({
                 <div className="col-span-12 sm:col-span-1 flex items-end justify-end"><button type="button" disabled={revisionItems.length === 1} onClick={() => setRevisionItems((items) => items.filter((_, i) => i !== index))} aria-label={`Hapus item ${index + 1}`} className="rounded-md p-2 text-red-600 hover:bg-red-50 disabled:opacity-30"><Trash2 className="w-4 h-4" /></button></div>
               </div>
             ))}
-            <div className="flex flex-wrap justify-end gap-2 border-t border-[#BEC9C6] pt-4"><button type="button" onClick={() => setShowRevisionEditor(false)} className="rounded-lg border border-[#BEC9C6] px-4 py-2 text-sm font-semibold">Batal</button><button type="submit" className="rounded-lg bg-[#00433C] px-4 py-2 text-sm font-semibold text-white">Simpan Revisi</button></div>
+            <div className="flex flex-wrap justify-end gap-2 border-t border-[#BEC9C6] pt-4"><button type="button" onClick={() => setShowRevisionEditor(false)} className="rounded-lg border border-[#BEC9C6] px-4 py-2 text-sm font-semibold">Batal</button><button type="submit" disabled={savingRevision} className="rounded-lg bg-[#00433C] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{savingRevision ? 'Menyimpan…' : 'Simpan Revisi'}</button></div>
           </form>
         </div>
       )}
