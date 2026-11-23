@@ -367,7 +367,23 @@ export default function App() {
         requestCode: request.code,
       },
     });
-    if (error || data?.error) return { ok: false, error: data?.error || error?.message || 'Upload gagal.' };
+    if (error) {
+      let detail = error.message || 'Upload gagal.';
+      const context = (error as { context?: Response }).context;
+      if (context) {
+        try {
+          const responseBody = await context.clone().json();
+          detail = responseBody?.error || responseBody?.message || detail;
+        } catch {
+          try {
+            const responseText = await context.clone().text();
+            if (responseText) detail = responseText.slice(0, 500);
+          } catch { /* gunakan pesan standar */ }
+        }
+      }
+      return { ok: false, error: `Server upload (${context?.status || 'error'}): ${detail}` };
+    }
+    if (data?.error) return { ok: false, error: data.error };
     if (!data?.success || !data?.file?.id) {
       return { ok: false, error: 'Google Drive tidak mengonfirmasi penyimpanan file. Periksa konfigurasi folder arsip.' };
     }
