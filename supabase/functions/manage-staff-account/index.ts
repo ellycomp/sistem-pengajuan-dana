@@ -114,12 +114,30 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  if (input.action === "update_profile") {
+    const accountId = String(input.accountId ?? "");
+    const name = String(input.name ?? "").trim();
+    const role = String(input.role ?? "");
+    const title = String(input.title ?? "").trim();
+    const unit = String(input.unit ?? "").trim();
+    const email = String(input.email ?? "").trim().toLowerCase();
+    const niy = String(input.niy ?? "").trim() || null;
+    const allowedRoles = ["guru", "sarana", "bendahara-sekolah", "bendahara-umum", "direktur"];
+    if (!accountId || !name || !email || !title || !unit || !allowedRoles.includes(role)) return json({ error: "Data akun belum lengkap." }, 400);
+    const { error: authUpdateError } = await admin.auth.admin.updateUserById(accountId, { email, email_confirm: true });
+    if (authUpdateError) return json({ error: "Email akun gagal diperbarui.", detail: authUpdateError.message }, 400);
+    const { data: profile, error: updateError } = await admin.from("profiles").update({ name, email, role, title, unit, niy }).eq("id", accountId).select("id, name, email, role, title, unit, avatar, niy").single();
+    if (updateError || !profile) return json({ error: "Profil akun gagal diperbarui.", detail: updateError?.message }, 500);
+    return json({ profile });
+  }
+
   if (input.action !== "create") return json({ error: "Aksi belum didukung." }, 400);
   const name = String(input.name ?? "").trim();
   const email = String(input.email ?? "").trim().toLowerCase();
   const password = String(input.password ?? "");
   const title = String(input.title ?? "").trim();
   const unit = String(input.unit ?? "").trim();
+  const niy = String(input.niy ?? "").trim() || null;
   const allowedRoles = ["guru", "sarana", "bendahara-sekolah", "bendahara-umum", "direktur"];
   const role = String(input.role ?? "");
 
@@ -149,8 +167,9 @@ Deno.serve(async (req: Request) => {
       title,
       unit,
       avatar,
+      niy,
     })
-    .select("id, name, email, role, title, unit, avatar")
+    .select("id, name, email, role, title, unit, avatar, niy")
     .single();
 
   if (profileError || !profile) {
