@@ -143,7 +143,7 @@ export default function App() {
     const loadAuthenticatedProfile = async (userId: string, initializeNavigation = false) => {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, name, email, role, title, unit, avatar')
+        .select('id, name, email, role, title, unit, avatar, niy')
         .eq('id', userId)
         .single();
 
@@ -178,6 +178,7 @@ export default function App() {
           budgetCategoryName: row.budget_category_name,
           unit: row.unit || '',
           requesterName: row.requester_name,
+          requesterNiy: row.requester_niy || '',
           requesterRole: row.requester_role,
           submittedDate: row.submitted_date,
           targetDate: row.target_date,
@@ -201,6 +202,7 @@ export default function App() {
               roleLabel: stage.role_label,
               personName: stage.person_name,
               personTitle: stage.person_title || '',
+              personNiy: stage.person_niy || '',
               state: stage.state,
               note: stage.note || undefined,
               timestamp: stage.timestamp_label || undefined,
@@ -239,6 +241,7 @@ export default function App() {
         role: row.role,
         title: row.title || '',
         unit: row.unit || '',
+        niy: row.niy || '',
         avatar: row.avatar || makeAvatarInitials(row.name),
         password: '',
         isDefault: false,
@@ -250,6 +253,7 @@ export default function App() {
         role: profile.role,
         title: profile.title || '',
         unit: profile.unit || '',
+        niy: profile.niy || '',
         avatar: profile.avatar || makeAvatarInitials(profile.name),
         password: '',
         isDefault: false,
@@ -363,6 +367,7 @@ export default function App() {
     role: RoleId;
     title: string;
     unit: string;
+    niy: string;
     email: string;
     password: string;
   }): Promise<{ ok: boolean; error?: string }> => {
@@ -379,6 +384,7 @@ export default function App() {
         role: payload.role,
         title: payload.title.trim(),
         unit: payload.unit.trim(),
+        niy: payload.niy.trim(),
       },
     });
     if (error || data?.error) {
@@ -409,6 +415,7 @@ export default function App() {
       role: created.role,
       title: created.title,
       unit: created.unit,
+      niy: created.niy || payload.niy.trim(),
       avatar: makeAvatarInitials(created.name),
       password: '',
       isDefault: false,
@@ -425,6 +432,7 @@ export default function App() {
       role: RoleId;
       title: string;
       unit: string;
+      niy: string;
       email: string;
       password: string;
     }
@@ -464,6 +472,7 @@ export default function App() {
               role: safeRole,
               title: payload.title.trim() || acc.title,
               unit: payload.unit.trim() || acc.unit,
+              niy: payload.niy.trim(),
               email: payload.email.trim(),
               password: payload.password,
               avatar: makeAvatarInitials(payload.name),
@@ -782,6 +791,7 @@ export default function App() {
       budgetCategoryName: budget?.name || 'Operasional',
       unit: payload.unit,
       requesterName: currentUser.name,
+      requesterNiy: currentUser.niy,
       requesterRole: payload.requesterRole,
       submittedDate: shortDate,
       targetDate: payload.targetDate,
@@ -799,6 +809,7 @@ export default function App() {
           roleLabel: '1. Guru / Staf Pengaju',
           personName: currentUser.name,
           personTitle: currentUser.title,
+          personNiy: currentUser.niy,
           state: 'done',
           timestamp: `Diajukan · ${timestamp}`,
         },
@@ -861,7 +872,7 @@ export default function App() {
       p_stages: newReq.stages.map((stage) => ({
         step: stage.step, roleKey: stage.roleKey, roleLabel: stage.roleLabel,
         personName: stage.personName, personTitle: stage.personTitle,
-        state: stage.state, note: stage.note, timestamp: stage.timestamp,
+        personNiy: stage.personNiy || '', state: stage.state, note: stage.note, timestamp: stage.timestamp,
       })),
     });
     if (createError) { setToastMessage(`Pengajuan gagal disimpan ke database: ${createError.message}`); return; }
