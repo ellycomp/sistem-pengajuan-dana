@@ -425,7 +425,7 @@ export default function App() {
     return { ok: true };
   };
 
-  const handleUpdateAccount = (
+  const handleUpdateAccount = async (
     accountId: string,
     payload: {
       name: string;
@@ -436,7 +436,7 @@ export default function App() {
       email: string;
       password: string;
     }
-  ): { ok: boolean; error?: string } => {
+  ): Promise<{ ok: boolean; error?: string }> => {
     if (currentUser.role !== 'direktur') {
       return {
         ok: false,
@@ -458,6 +458,13 @@ export default function App() {
     const target = accounts.find((a) => a.id === accountId);
     if (!target) {
       return { ok: false, error: 'Akun tidak ditemukan.' };
+    }
+    if (!supabase) return { ok: false, error: 'Koneksi Supabase belum tersedia.' };
+    const { data: niyResult, error: niyError } = await supabase.functions.invoke('manage-staff-account', {
+      body: { action: 'update_niy', userId: accountId, niy: payload.niy.trim() },
+    });
+    if (niyError || niyResult?.error) {
+      return { ok: false, error: niyResult?.error || niyError?.message || 'NIY gagal disimpan.' };
     }
 
     const safeRole: RoleId =
