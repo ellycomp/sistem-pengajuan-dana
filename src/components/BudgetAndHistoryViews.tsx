@@ -413,7 +413,7 @@ interface ProfileViewProps {
       email: string;
       password: string;
     }
-  ) => { ok: boolean; error?: string };
+  ) => Promise<{ ok: boolean; error?: string }>;
   onDeleteAccount: (accountId: string) => void;
   onSelectTab: (tab: AppNavTab) => void;
   onExportBackup: () => void;
@@ -498,7 +498,7 @@ export function ProfileView({
     setEditTitle(ROLE_DEFAULT_TITLES[role]);
   };
 
-  const handleSubmitEditAccount = (e: React.FormEvent) => {
+  const handleSubmitEditAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isDirector || !editingAccount) return;
 
@@ -511,7 +511,7 @@ export function ProfileView({
       return;
     }
 
-    const result = onUpdateAccount(editingAccount.id, {
+    const result = await onUpdateAccount(editingAccount.id, {
       name: editName.trim(),
       role: editRole,
       title: editTitle.trim() || ROLE_DEFAULT_TITLES[editRole],
