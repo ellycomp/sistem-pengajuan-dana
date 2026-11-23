@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ChevronRight,
   Download,
@@ -443,7 +443,10 @@ export function ProfileView({
   const isDirector = currentUser.role === 'direktur';
   const [backupError, setBackupError] = useState<string>('');
   const [logoMessage, setLogoMessage] = useState<string>('');
-  const [showAddForm, setShowAddForm] = useState<boolean>(false);
+  const [showAddForm, setShowAddForm] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('sit_qudwah_show_add_user_form') === 'true'; }
+    catch { return false; }
+  });
   const [newName, setNewName] = useState<string>('');
   const [newRole, setNewRole] = useState<RoleId>('guru');
   const [newTitle, setNewTitle] = useState<string>(ROLE_DEFAULT_TITLES.guru);
@@ -451,6 +454,11 @@ export function ProfileView({
   const [newEmail, setNewEmail] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
+
+  useEffect(() => {
+    try { sessionStorage.setItem('sit_qudwah_show_add_user_form', String(showAddForm)); }
+    catch { /* session storage may be unavailable */ }
+  }, [showAddForm]);
 
   // Edit account modal state
   const [editingAccount, setEditingAccount] = useState<UserAccount | null>(
