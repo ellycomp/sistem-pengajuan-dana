@@ -23,6 +23,26 @@ import {
 import { FundRequest, LineItem, RoleId } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
 
+type Html2PdfWorker = {
+  set: (options: Record<string, unknown>) => Html2PdfWorker;
+  from: (element: HTMLElement) => Html2PdfWorker;
+  outputPdf: (type: 'blob') => Promise<Blob>;
+};
+type Html2PdfFactory = () => Html2PdfWorker;
+declare global { interface Window { html2pdf?: Html2PdfFactory; } }
+const loadHtml2Pdf = async (): Promise<Html2PdfFactory> => {
+  if (window.html2pdf) return window.html2pdf;
+  await new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Tidak dapat memuat pembuat PDF. Periksa koneksi internet.'));
+    document.head.appendChild(script);
+  });
+  if (!window.html2pdf) throw new Error('Pembuat PDF tidak tersedia.');
+  return window.html2pdf;
+};
+
 interface RequestDetailViewProps {
   request: FundRequest;
   currentRole: RoleId;
@@ -59,7 +79,7 @@ export function RequestDetailView({
   const [savingRevision, setSavingRevision] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
-  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const pdfDocumentRef = useRef<HTMLDivElement>(null);
   const [revisionTitle, setRevisionTitle] = useState(request.title);
   const [revisionTargetDate, setRevisionTargetDate] = useState(request.targetDate);
   const [revisionAttachment, setRevisionAttachment] = useState(request.attachmentName);
@@ -823,37 +843,40 @@ export function RequestDetailView({
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <input
-                  ref={pdfInputRef}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  className="hidden"
-                  onChange={async (event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = '';
-                    if (!file) return;
+                <button
+                  type="button"
+                  disabled={uploadingPdf}
+                  onClick={async () => {
+                    if (!pdfDocumentRef.current) {
+                      setUploadMessage('Dokumen belum siap dibuat menjadi PDF.');
+                      return;
+                    }
                     setUploadingPdf(true);
-                    setUploadMessage('');
+                    setUploadMessage('Membuat PDF dari dokumen pengajuan...');
                     try {
+                      const html2pdf = await loadHtml2Pdf();
+                      const blob = await html2pdf().set({
+                        margin: [8, 8, 8, 8],
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: { mode: ['css', 'legacy'] },
+                      }).from(pdfDocumentRef.current).outputPdf('blob');
+                      const file = new File([blob], 'Pengajuan.pdf', { type: 'application/pdf' });
                       const result = await onUploadPdf(file);
                       setUploadMessage(result.ok
-                        ? 'PDF berhasil diunggah ke arsip Google Drive.'
+                        ? 'PDF berhasil dibuat otomatis dan diunggah ke Google Drive.'
                         : result.error || 'Upload PDF gagal.');
                     } catch (error) {
-                      setUploadMessage(error instanceof Error ? error.message : 'Upload PDF gagal.');
+                      setUploadMessage(error instanceof Error ? error.message : 'Gagal membuat atau mengunggah PDF.');
                     } finally {
                       setUploadingPdf(false);
                     }
                   }}
-                />
-                <button
-                  type="button"
-                  disabled={uploadingPdf}
-                  onClick={() => pdfInputRef.current?.click()}
                   className="inline-flex items-center gap-2 rounded-[8px] border border-[#00433C] text-[#00433C] px-4 py-2 font-label text-[13px] font-semibold hover:bg-[#E8F2EF] disabled:opacity-50"
                 >
                   <UploadCloud className="w-4 h-4" aria-hidden="true" />
-                  <span>{uploadingPdf ? 'Mengunggah...' : 'Upload PDF ke Google Drive'}</span>
+                  <span>{uploadingPdf ? 'Membuat & Mengunggah...' : 'Buat PDF & Upload ke Google Drive'}</span>
                 </button>
                 <button
                   type="button"
@@ -878,7 +901,7 @@ export function RequestDetailView({
             </div>
 
             <div className="p-4 lg:p-6 overflow-y-auto bg-[#ECEEEC]">
-              <div className="bg-[#FFFFFF] border border-[#BEC9C6] p-6 lg:p-8 mx-auto max-w-[210mm] text-[#191C1B]">
+              <div ref={pdfDocumentRef} className="bg-[#FFFFFF] border border-[#BEC9C6] p-6 lg:p-8 mx-auto max-w-[210mm] text-[#191C1B]">
                 {/* Formal Document Preview */}
                 <div className="flex items-center justify-between border-b-2 border-[#00433C] pb-4 mb-5 gap-4">
                   <div className="flex items-center gap-3">
