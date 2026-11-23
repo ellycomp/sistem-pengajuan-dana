@@ -1071,6 +1071,7 @@ export function RequestDetailView({
                     <p className="font-semibold text-[#191C1B] underline">
                       {request.requesterName}
                     </p>
+                    <p className="text-[11px] text-[#3F4947]">NIY: {request.requesterNiy || 'Belum tersedia'}</p>
                     <p className="text-[11px] text-[#3F4947]">
                       {request.requesterRole}
                     </p>
@@ -1264,6 +1265,7 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {request.requesterName}
             </p>
+            <p className="text-[11px] text-[#3F4947]">NIY: {request.requesterNiy || 'Belum tersedia'}</p>
             <p className="text-[11px] text-[#3F4947]">
               {request.requesterRole}
             </p>
