@@ -117,7 +117,7 @@ Deno.serve(async (req: Request) => {
   if (input.action === "update_niy") {
     const userId = String(input.userId ?? "").trim();
     const niy = String(input.niy ?? "").trim();
-    if (!userId || !niy) return json({ error: "NIY wajib diisi." }, 400);
+    if (!userId) return json({ error: "ID akun tidak ditemukan." }, 400);
     const { data: updated, error: updateError } = await admin
       .from("profiles")
       .update({ niy })
@@ -140,8 +140,8 @@ Deno.serve(async (req: Request) => {
   const allowedRoles = ["guru", "sarana", "bendahara-sekolah", "bendahara-umum", "direktur"];
   const role = String(input.role ?? "");
 
-  if (!name || !email || !title || !unit || !niy || password.length < 6 || !allowedRoles.includes(role)) {
-    return json({ error: "Lengkapi nama, NIY, email, jabatan, unit, peran, dan kata sandi minimal 6 karakter." }, 400);
+  if (!name || !email || !title || !unit || password.length < 6 || !allowedRoles.includes(role)) {
+    return json({ error: "Lengkapi nama, email, jabatan, unit, peran, dan kata sandi minimal 6 karakter." }, 400);
   }
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -165,7 +165,7 @@ Deno.serve(async (req: Request) => {
       role,
       title,
       unit,
-      niy,
+      ...(niy ? { niy } : {}),
       avatar,
     })
     .select("id, name, email, role, title, unit, niy, avatar")
