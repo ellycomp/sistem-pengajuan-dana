@@ -143,7 +143,7 @@ export default function App() {
     const loadAuthenticatedProfile = async (userId: string, initializeNavigation = false) => {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, email, role, title, unit, avatar')
         .eq('id', userId)
         .single();
 
@@ -178,7 +178,6 @@ export default function App() {
           budgetCategoryName: row.budget_category_name,
           unit: row.unit || '',
           requesterName: row.requester_name,
-          requesterNiy: row.requester_niy || '',
           requesterRole: row.requester_role,
           submittedDate: row.submitted_date,
           targetDate: row.target_date,
@@ -202,7 +201,6 @@ export default function App() {
               roleLabel: stage.role_label,
               personName: stage.person_name,
               personTitle: stage.person_title || '',
-              personNiy: stage.person_niy || '',
               state: stage.state,
               note: stage.note || undefined,
               timestamp: stage.timestamp_label || undefined,
@@ -229,7 +227,7 @@ export default function App() {
 
       const { data: profileRows, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, email, role, title, unit, avatar')
         .order('name');
       if (profilesError) {
         setToastMessage(`Daftar petugas belum dapat dimuat: ${profilesError.message}`);
@@ -241,7 +239,6 @@ export default function App() {
         role: row.role,
         title: row.title || '',
         unit: row.unit || '',
-        niy: row.niy || '',
         avatar: row.avatar || makeAvatarInitials(row.name),
         password: '',
         isDefault: false,
@@ -253,7 +250,6 @@ export default function App() {
         role: profile.role,
         title: profile.title || '',
         unit: profile.unit || '',
-        niy: profile.niy || '',
         avatar: profile.avatar || makeAvatarInitials(profile.name),
         password: '',
         isDefault: false,
@@ -367,7 +363,6 @@ export default function App() {
     role: RoleId;
     title: string;
     unit: string;
-    niy: string;
     email: string;
     password: string;
   }): Promise<{ ok: boolean; error?: string }> => {
@@ -384,7 +379,6 @@ export default function App() {
         role: payload.role,
         title: payload.title.trim(),
         unit: payload.unit.trim(),
-        niy: payload.niy.trim(),
       },
     });
     if (error || data?.error) {
@@ -404,10 +398,8 @@ export default function App() {
           // Fall back to the SDK error message below.
         }
       }
-      const status = (error as any)?.context?.status;
       const message = serverMessage || error?.message || 'Gagal membuat akun.';
-      const statusText = status ? ` (HTTP ${status})` : '';
-      return { ok: false, error: `${message}${statusText}${serverDetail ? ` — ${serverDetail}` : ''}` };
+      return { ok: false, error: serverDetail ? `${message} — ${serverDetail}` : message };
     }
     const created = data.profile;
     const newAccount: UserAccount = {
@@ -417,7 +409,6 @@ export default function App() {
       role: created.role,
       title: created.title,
       unit: created.unit,
-      niy: payload.niy.trim(),
       avatar: makeAvatarInitials(created.name),
       password: '',
       isDefault: false,
@@ -427,18 +418,17 @@ export default function App() {
     return { ok: true };
   };
 
-  const handleUpdateAccount = async (
+  const handleUpdateAccount = (
     accountId: string,
     payload: {
       name: string;
       role: RoleId;
       title: string;
       unit: string;
-      niy: string;
       email: string;
       password: string;
     }
-  ): Promise<{ ok: boolean; error?: string }> => {
+  ): { ok: boolean; error?: string } => {
     if (currentUser.role !== 'direktur') {
       return {
         ok: false,
@@ -461,58 +451,27 @@ export default function App() {
     if (!target) {
       return { ok: false, error: 'Akun tidak ditemukan.' };
     }
-    if (!supabase) return { ok: false, error: 'Koneksi Supabase belum tersedia.' };
+
     const safeRole: RoleId =
       accountId === currentUser.id ? 'direktur' : payload.role;
-
-    // Perubahan profil dilakukan melalui Edge Function dengan service role.
-    // Tabel profiles memang menolak UPDATE langsung dari browser (RLS).
-    const profileUpdates = {
-      name: payload.name.trim(),
-      role: safeRole,
-      title: payload.title.trim() || target.title,
-      unit: payload.unit.trim() || target.unit,
-      niy: payload.niy.trim(),
-    };
-    const { data: updateData, error: profileUpdateError } = await supabase.functions.invoke('manage-staff-account', {
-      body: {
-        action: 'update_profile',
-        accountId,
-        ...profileUpdates,
-      },
-    });
-
-    if (profileUpdateError || updateData?.error) {
-      let detail = updateData?.detail ? String(updateData.detail) : '';
-      if (profileUpdateError && !detail) {
-        try {
-          const response = (profileUpdateError as any).context;
-          if (response && typeof response.clone === 'function') {
-            const body = await response.clone().json();
-            detail = body?.detail || body?.message || body?.error || '';
-          }
-        } catch { /* gunakan pesan SDK */ }
-      }
-      return {
-        ok: false,
-        error: updateData?.error || `Gagal menyimpan perubahan profil: ${detail || profileUpdateError?.message || 'Kesalahan server'}`,
-      };
-    }
 
     setAccounts((prev) =>
       prev.map((acc) =>
         acc.id === accountId
           ? {
               ...acc,
-              ...profileUpdates,
-              niy: payload.niy.trim(),
-              email: target.email,
+              name: payload.name.trim(),
+              role: safeRole,
+              title: payload.title.trim() || acc.title,
+              unit: payload.unit.trim() || acc.unit,
+              email: payload.email.trim(),
+              password: payload.password,
               avatar: makeAvatarInitials(payload.name),
             }
           : acc
       )
     );
-    setToastMessage(`Data akun ${payload.name.trim()} berhasil disimpan.`);
+    setToastMessage(`Data akun ${payload.name.trim()} berhasil diperbarui.`);
     return { ok: true };
   };
 
@@ -823,7 +782,6 @@ export default function App() {
       budgetCategoryName: budget?.name || 'Operasional',
       unit: payload.unit,
       requesterName: currentUser.name,
-      requesterNiy: currentUser.niy || '',
       requesterRole: payload.requesterRole,
       submittedDate: shortDate,
       targetDate: payload.targetDate,
@@ -841,7 +799,6 @@ export default function App() {
           roleLabel: '1. Guru / Staf Pengaju',
           personName: currentUser.name,
           personTitle: currentUser.title,
-          personNiy: currentUser.niy,
           state: 'done',
           timestamp: `Diajukan · ${timestamp}`,
         },
@@ -904,7 +861,7 @@ export default function App() {
       p_stages: newReq.stages.map((stage) => ({
         step: stage.step, roleKey: stage.roleKey, roleLabel: stage.roleLabel,
         personName: stage.personName, personTitle: stage.personTitle,
-        personNiy: stage.personNiy || '', state: stage.state, note: stage.note, timestamp: stage.timestamp,
+        state: stage.state, note: stage.note, timestamp: stage.timestamp,
       })),
     });
     if (createError) { setToastMessage(`Pengajuan gagal disimpan ke database: ${createError.message}`); return; }
@@ -1082,7 +1039,6 @@ export default function App() {
           (activeRequest ? (
             <RequestDetailView
               request={activeRequest}
-              accounts={accounts}
               currentRole={currentRole}
               currentUserName={currentUser.name}
               onBack={() => setActiveTab('pengajuan')}
