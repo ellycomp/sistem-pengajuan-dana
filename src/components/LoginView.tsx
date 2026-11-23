@@ -266,7 +266,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
                   htmlFor="web-email"
                   className="font-label text-[14px] leading-[20px] font-semibold text-[#191C1B]"
                 >
-                  Email atau NIY
+                  Email
                 </label>
                 <input
                   id="web-email"
@@ -409,7 +409,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
                 htmlFor="mob-email"
                 className="font-label text-[14px] leading-[20px] font-semibold text-[#191C1B]"
               >
-                Email atau NIY
+                Email
               </label>
               <input
                 id="mob-email"
