@@ -400,6 +400,7 @@ interface ProfileViewProps {
     unit: string;
     email: string;
     password: string;
+    niy: string;
   }) => Promise<{ ok: boolean; error?: string }>;
   onUpdateAccount: (
     accountId: string,
@@ -410,8 +411,9 @@ interface ProfileViewProps {
       unit: string;
       email: string;
       password: string;
+      niy: string;
     }
-  ) => { ok: boolean; error?: string };
+  ) => Promise<{ ok: boolean; error?: string }>;
   onDeleteAccount: (accountId: string) => void;
   onSelectTab: (tab: AppNavTab) => void;
   onExportBackup: () => void;
@@ -453,6 +455,7 @@ export function ProfileView({
   const [newUnit, setNewUnit] = useState<string>(SCHOOL_UNITS[0]);
   const [newEmail, setNewEmail] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
+  const [newNiy, setNewNiy] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
 
   useEffect(() => {
@@ -470,6 +473,7 @@ export function ProfileView({
   const [editUnit, setEditUnit] = useState<string>(SCHOOL_UNITS[0]);
   const [editEmail, setEditEmail] = useState<string>('');
   const [editPassword, setEditPassword] = useState<string>('');
+  const [editNiy, setEditNiy] = useState<string>('');
   const [editError, setEditError] = useState<string>('');
 
   const handleRoleChange = (role: RoleId) => {
@@ -485,6 +489,7 @@ export function ProfileView({
     setEditUnit(acc.unit);
     setEditEmail(acc.email);
     setEditPassword(acc.password);
+    setEditNiy(acc.niy || '');
     setEditError('');
   };
 
@@ -493,7 +498,7 @@ export function ProfileView({
     setEditTitle(ROLE_DEFAULT_TITLES[role]);
   };
 
-  const handleSubmitEditAccount = (e: React.FormEvent) => {
+  const handleSubmitEditAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isDirector || !editingAccount) return;
 
@@ -506,13 +511,14 @@ export function ProfileView({
       return;
     }
 
-    const result = onUpdateAccount(editingAccount.id, {
+    const result = await onUpdateAccount(editingAccount.id, {
       name: editName.trim(),
       role: editRole,
       title: editTitle.trim() || ROLE_DEFAULT_TITLES[editRole],
       unit: editUnit.trim() || 'SIT Qudwah',
       email: editEmail.trim(),
       password: editPassword.trim(),
+      niy: editNiy.trim(),
     });
 
     if (!result.ok) {
@@ -545,6 +551,7 @@ export function ProfileView({
       unit: newUnit.trim() || 'SIT Qudwah',
       email: newEmail.trim(),
       password: newPassword.trim(),
+      niy: newNiy.trim(),
     });
 
     if (!result.ok) {
@@ -555,6 +562,7 @@ export function ProfileView({
     setNewName('');
     setNewEmail('');
     setNewPassword('');
+    setNewNiy('');
     setFormError('');
     setShowAddForm(false);
   };
@@ -899,6 +907,11 @@ export function ProfileView({
                   </div>
 
                   <div className="flex flex-col gap-1">
+                    <label htmlFor="acc-niy" className="font-label text-[13px] font-semibold text-[#191C1B]">NIY (Nomor Induk Yayasan) - Opsional</label>
+                    <input id="acc-niy" type="text" value={newNiy} onChange={(e) => setNewNiy(e.target.value)} placeholder="Masukkan NIY" className="w-full rounded-[8px] border border-[#BEC9C6] bg-[#FFFFFF] px-3 py-2 text-[14px] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]" />
+                  </div>
+
+              <div className="flex flex-col gap-1">
                     <label
                       htmlFor="acc-email"
                       className="font-label text-[13px] font-semibold text-[#191C1B]"
@@ -1165,6 +1178,11 @@ export function ProfileView({
                   <option value="Keuangan Yayasan">Keuangan Yayasan</option>
                   <option value="Pimpinan Yayasan">Pimpinan Yayasan</option>
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label htmlFor="edit-acc-niy" className="font-label text-[13px] font-semibold text-[#191C1B]">NIY (Nomor Induk Yayasan) - Opsional</label>
+                <input id="edit-acc-niy" type="text" value={editNiy} onChange={(e) => setEditNiy(e.target.value)} placeholder="Masukkan NIY" className="w-full rounded-[8px] border border-[#BEC9C6] bg-[#FFFFFF] px-3 py-2 text-[14px] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]" />
               </div>
 
               <div className="flex flex-col gap-1">
