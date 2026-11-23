@@ -59,6 +59,7 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
     'Dapur': '56',
     'Perpustakaan': '57',
     'Kesehatan': '58',
+    'Transportasi': '059',
   };
   const budgetUnits = Object.keys(budgetUnitPrefixes);
   const generatedBudgetCode = useMemo(() => {
