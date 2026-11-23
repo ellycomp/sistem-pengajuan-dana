@@ -64,13 +64,11 @@ await fs.writeFile(path.join(drawable, 'ic_launcher_background.xml'),
     <solid android:color="#FFFFFF" />
 </shape>`);
 
-const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
-</adaptive-icon>
-`;
-await fs.writeFile(path.join(adaptive, 'ic_launcher.xml'), adaptiveXml, 'utf8');
-await fs.writeFile(path.join(adaptive, 'ic_launcher_round.xml'), adaptiveXml, 'utf8');
+// Do not ship adaptive XML resources for now. Some Android launchers were
+// resolving Capacitor's adaptive background instead of our foreground layer.
+// Removing these two resources forces Android to use the verified, density-
+// specific ic_launcher.png and ic_launcher_round.png generated above.
+await fs.rm(path.join(adaptive, 'ic_launcher.xml'), { force: true });
+await fs.rm(path.join(adaptive, 'ic_launcher_round.xml'), { force: true });
 
-console.log('SIT Qudwah launcher icons generated for all Android densities.');
+console.log('SIT Qudwah raster launcher icons generated for all Android densities.');
