@@ -30,18 +30,19 @@ const drawable = path.join(res, 'drawable');
 const drawableAnyDpiV24 = path.join(res, 'drawable-anydpi-v24');
 const adaptive = path.join(res, 'mipmap-anydpi-v26');
 await fs.mkdir(drawable, { recursive: true });
+await fs.mkdir(drawableAnyDpiV24, { recursive: true });
 await fs.mkdir(adaptive, { recursive: true });
+const foregroundPng = await sharp(svg)
+  .resize(324, 324, { fit: 'contain' })
+  .png()
+  .toBuffer();
+await fs.writeFile(path.join(drawable, 'ic_launcher_foreground.png'), foregroundPng);
 
-// Capacitor's default drawable-anydpi-v24 foreground vector takes precedence
-// over drawable/ic_launcher_foreground.png on Android 8+.
-// Remove both generated defaults so the adaptive icon uses our SIT Qudwah PNG.
-for (const file of [
-  path.join(drawableAnyDpiV24, 'ic_launcher_foreground.xml'),
-  path.join(drawableAnyDpiV24, '$ic_launcher_foreground__0.xml'),
-]) {
-  await fs.rm(file, { force: true });
-}
-await sharp(svg).resize(324, 324, { fit: 'contain' }).png().toFile(path.join(drawable, 'ic_launcher_foreground.png'));
+// Put an app-owned foreground in drawable-anydpi-v24 as well. Android gives
+// this qualified resource precedence over Capacitor's library vector drawable
+// with the same name when resolving the adaptive icon on Android 8+.
+await fs.writeFile(path.join(drawableAnyDpiV24, 'ic_launcher_foreground.png'), foregroundPng);
+await fs.rm(path.join(drawableAnyDpiV24, 'ic_launcher_foreground.xml'), { force: true });
 
 const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
