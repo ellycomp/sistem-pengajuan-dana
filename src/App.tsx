@@ -344,57 +344,7 @@ export default function App() {
     setToastMessage('');
   };
 
-  const handleUploadRequestPdf = async (file: File, request: FundRequest): Promise<{ ok: boolean; error?: string; url?: string }> => {
-    if (!supabase) return { ok: false, error: 'Koneksi Supabase belum tersedia.' };
-    if (file.type !== 'application/pdf') return { ok: false, error: 'Pilih file PDF.' };
-    if (file.size > 10 * 1024 * 1024) return { ok: false, error: 'Ukuran PDF maksimal 10 MB.' };
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = String(reader.result || '');
-        resolve(result.split(',')[1] || '');
-      };
-      reader.onerror = () => reject(new Error('File PDF tidak dapat dibaca.'));
-      reader.readAsDataURL(file);
-    });
-    const safeCode = request.code.replace(/[^a-zA-Z0-9-_]/g, '_');
-    const datePart = new Date().toISOString().slice(0, 10);
-    const { data, error } = await supabase.functions.invoke('upload-request-pdf', {
-      body: {
-        fileName: `Pengajuan_${safeCode}_${datePart}.pdf`,
-        mimeType: 'application/pdf',
-        fileBase64: base64,
-        requestCode: request.code,
-      },
-    });
-    if (error) {
-      let detail = error.message || 'Upload gagal.';
-      const context = (error as { context?: unknown }).context;
-      if (context && typeof context === 'object') {
-        const response = context as { status?: number; text?: () => Promise<string>; clone?: () => { text: () => Promise<string> } };
-        try {
-          const raw = await (response.clone ? response.clone().text() : response.text?.() || Promise.resolve(''));
-          if (raw) {
-            try {
-              const parsed = JSON.parse(raw);
-              detail = parsed.error || parsed.message || parsed.msg || raw;
-            } catch {
-              detail = raw.slice(0, 700);
-            }
-          }
-        } catch {
-          detail = error.message || 'Server menolak permintaan upload dan isi respons tidak dapat dibaca.';
-        }
-        return { ok: false, error: `Upload gagal (HTTP ${response.status || 'tidak diketahui'}): ${detail}` };
-      }
-      return { ok: false, error: `Upload gagal: ${detail}. Periksa apakah Edge Function upload-request-pdf sudah aktif di Supabase.` };
-    }
-    if (data?.error) return { ok: false, error: data.error };
-    if (!data?.success || !data?.file?.id) {
-      return { ok: false, error: 'Google Drive tidak mengonfirmasi penyimpanan file. Periksa konfigurasi folder arsip.' };
-    }
-    return { ok: true, url: data.file.webViewLink || `https://drive.google.com/file/d/${data.file.id}/view` };
-  };
+
 
   const handleAddAccount = async (payload: {
     name: string;
@@ -1084,7 +1034,6 @@ export default function App() {
               onRequestRevision={handleRequestRevision}
               onResubmit={handleResubmit}
               onUpdateRevision={handleUpdateRevision}
-              onUploadPdf={(file) => handleUploadRequestPdf(file, activeRequest)}
             />
           ) : (
             <div className="flex-1 px-4 lg:px-8 py-12 max-w-2xl w-full mx-auto flex flex-col items-center justify-center text-center gap-3">
