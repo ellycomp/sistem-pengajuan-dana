@@ -19,7 +19,7 @@ import {
   getStatusLabel,
   TIER_CONFIGS,
 } from '../data/seedData';
-import { FundRequest, LineItem, RoleId } from '../types/kassekolah';
+import { FundRequest, LineItem, RoleId, UserAccount } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
 
 type Html2PdfWorker = {
@@ -44,6 +44,7 @@ const loadHtml2Pdf = async (): Promise<Html2PdfFactory> => {
 
 interface RequestDetailViewProps {
   request: FundRequest;
+  accounts: UserAccount[];
   currentRole: RoleId;
   currentUserName: string;
   onBack: () => void;
@@ -55,6 +56,7 @@ interface RequestDetailViewProps {
 
 export function RequestDetailView({
   request,
+  accounts,
   currentRole,
   currentUserName,
   onBack,
@@ -108,6 +110,10 @@ export function RequestDetailView({
     : stageBendaharaSekolah?.personName || 'Bendahara Sekolah';
   const directorSignerName =
     stageDirektur?.personName || 'Direktur SIT Qudwah';
+
+  const requesterSignerNiy = accounts.find((account) => account.name === request.requesterName)?.niy || 'Belum tersedia';
+  const treasurerSignerNiy = accounts.find((account) => account.name === treasurerSignerName)?.niy || 'Belum tersedia';
+  const directorSignerNiy = accounts.find((account) => account.name === directorSignerName)?.niy || 'Belum tersedia';
 
   const completedCount = request.stages.filter(
     (s) => s.state === 'done'
@@ -1264,6 +1270,7 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {request.requesterName}
             </p>
+            <p className="text-[11px] text-[#3F4947]">NIY: {requesterSignerNiy}</p>
             <p className="text-[11px] text-[#3F4947]">
               {request.requesterRole}
             </p>
@@ -1280,6 +1287,7 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {treasurerSignerName}
             </p>
+            <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy}</p>
             <p className="text-[11px] text-[#3F4947]">
               {treasurerSignerSubLabel}
             </p>
@@ -1292,6 +1300,7 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {directorSignerName}
             </p>
+            <p className="text-[11px] text-[#3F4947]">NIY: {directorSignerNiy}</p>
             <p className="text-[11px] text-[#3F4947]">
               Direktur SIT Qudwah Sungai Rengit
             </p>
