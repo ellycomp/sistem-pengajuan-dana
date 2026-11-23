@@ -33,7 +33,7 @@ export interface UserProfile {
   avatar: string;
   email: string;
   unit: string;
-  niy: string;
+  niy?: string;
 }
 
 export interface UserAccount extends UserProfile {
