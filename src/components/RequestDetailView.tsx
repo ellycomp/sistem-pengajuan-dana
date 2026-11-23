@@ -840,7 +840,7 @@ export function RequestDetailView({
                   Pratinjau Cetak Hasil Akhir Pengajuan
                 </h3>
                 <p className="font-body text-[13px] text-[#3F4947]">
-                  Total {formatRupiah(totalAmount)} ({treasurerSignerSubLabel})
+                  Total {formatRupiah(totalAmount)} ({treasurerSignerSubLabel.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())})
                   · Penandatangan: Pengaju, {treasurerSignerRoleLabel}, &amp;
                   Direktur
                 </p>
@@ -1079,7 +1079,7 @@ export function RequestDetailView({
                     </p>
                     <p className="text-[11px] text-[#3F4947]">NIY: {requesterSignerNiy}</p>
                     <p className="text-[11px] text-[#3F4947]">
-                      {request.requesterRole.charAt(0).toUpperCase() + request.requesterRole.slice(1)}
+                      {request.requesterRole.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}
                     </p>
                   </div>
 
@@ -1096,7 +1096,7 @@ export function RequestDetailView({
                     </p>
                     <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy}</p>
                     <p className="text-[11px] text-[#3F4947]">
-                      {treasurerSignerSubLabel}
+                      {treasurerSignerSubLabel.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}
                     </p>
                   </div>
 
@@ -1275,7 +1275,7 @@ export function RequestDetailView({
             </p>
             <p className="text-[11px] text-[#3F4947]">NIY: {requesterSignerNiy}</p>
             <p className="text-[11px] text-[#3F4947]">
-              {request.requesterRole.charAt(0).toUpperCase() + request.requesterRole.slice(1)}
+              {request.requesterRole.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}
             </p>
           </div>
 
@@ -1292,7 +1292,7 @@ export function RequestDetailView({
             </p>
             <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy}</p>
             <p className="text-[11px] text-[#3F4947]">
-              {treasurerSignerSubLabel}
+              {treasurerSignerSubLabel.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())}
             </p>
           </div>
 
