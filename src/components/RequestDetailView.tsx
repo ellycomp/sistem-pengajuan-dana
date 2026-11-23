@@ -103,11 +103,14 @@ export function RequestDetailView({
   const treasurerSignerSubLabel = isAboveTwoMillion
     ? 'Otorisasi di atas Rp 2.000.000'
     : 'Otorisasi maksimal Rp 2.000.000';
-  const treasurerSignerName = isAboveTwoMillion
-    ? stageBendaharaUmum?.personName || 'Bendahara Umum'
-    : stageBendaharaSekolah?.personName || 'Bendahara Sekolah';
-  const directorSignerName =
-    stageDirektur?.personName || 'Direktur SIT Qudwah';
+  const treasurerSignerStage = isAboveTwoMillion
+    ? stageBendaharaUmum
+    : stageBendaharaSekolah;
+  const treasurerSignerName = treasurerSignerStage?.personName ||
+    (isAboveTwoMillion ? 'Bendahara Umum' : 'Bendahara Sekolah');
+  const treasurerSignerNiy = treasurerSignerStage?.personNiy || '';
+  const directorSignerName = stageDirektur?.personName || 'Direktur SIT Qudwah';
+  const directorSignerNiy = stageDirektur?.personNiy || '';
 
   const completedCount = request.stages.filter(
     (s) => s.state === 'done'
@@ -1088,6 +1091,7 @@ export function RequestDetailView({
                     <p className="font-semibold text-[#191C1B] underline">
                       {treasurerSignerName}
                     </p>
+                    <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy || 'Belum tersedia'}</p>
                     <p className="text-[11px] text-[#3F4947]">
                       {treasurerSignerSubLabel}
                     </p>
@@ -1102,6 +1106,7 @@ export function RequestDetailView({
                     <p className="font-semibold text-[#191C1B] underline">
                       {directorSignerName}
                     </p>
+                    <p className="text-[11px] text-[#3F4947]">NIY: {directorSignerNiy || 'Belum tersedia'}</p>
                     <p className="text-[11px] text-[#3F4947]">
                       Direktur SIT Qudwah Sungai Rengit
                     </p>
@@ -1282,6 +1287,7 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {treasurerSignerName}
             </p>
+                    <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy || 'Belum tersedia'}</p>
             <p className="text-[11px] text-[#3F4947]">
               {treasurerSignerSubLabel}
             </p>
@@ -1294,6 +1300,7 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {directorSignerName}
             </p>
+                    <p className="text-[11px] text-[#3F4947]">NIY: {directorSignerNiy || 'Belum tersedia'}</p>
             <p className="text-[11px] text-[#3F4947]">
               Direktur SIT Qudwah Sungai Rengit
             </p>
