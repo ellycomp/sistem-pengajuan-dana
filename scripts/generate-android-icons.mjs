@@ -27,9 +27,20 @@ for (const [folder, size] of Object.entries(sizes)) {
 }
 
 const drawable = path.join(res, 'drawable');
+const drawableAnyDpiV24 = path.join(res, 'drawable-anydpi-v24');
 const adaptive = path.join(res, 'mipmap-anydpi-v26');
 await fs.mkdir(drawable, { recursive: true });
 await fs.mkdir(adaptive, { recursive: true });
+
+// Capacitor's default drawable-anydpi-v24 foreground vector takes precedence
+// over drawable/ic_launcher_foreground.png on Android 8+.
+// Remove both generated defaults so the adaptive icon uses our SIT Qudwah PNG.
+for (const file of [
+  path.join(drawableAnyDpiV24, 'ic_launcher_foreground.xml'),
+  path.join(drawableAnyDpiV24, '$ic_launcher_foreground__0.xml'),
+]) {
+  await fs.rm(file, { force: true });
+}
 await sharp(svg).resize(324, 324, { fit: 'contain' }).png().toFile(path.join(drawable, 'ic_launcher_foreground.png'));
 
 const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
