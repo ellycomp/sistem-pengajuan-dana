@@ -8,7 +8,6 @@ import {
   FileText,
   Hourglass,
   Printer,
-  UploadCloud,
   RotateCcw,
   Plus,
   Trash2,
@@ -52,7 +51,6 @@ interface RequestDetailViewProps {
   onRequestRevision: (requestId: string, note: string) => void;
   onResubmit: (requestId: string) => void;
   onUpdateRevision: (requestId: string, updates: Pick<FundRequest, 'title' | 'targetDate' | 'attachmentName' | 'items'>) => Promise<{ ok: boolean; error?: string }>;
-  onUploadPdf: (file: File) => Promise<{ ok: boolean; error?: string; url?: string }>;
 }
 
 export function RequestDetailView({
@@ -64,7 +62,6 @@ export function RequestDetailView({
   onRequestRevision,
   onResubmit,
   onUpdateRevision,
-  onUploadPdf,
 }: RequestDetailViewProps) {
   const [actionModal, setActionModal] = useState<'approve' | 'revisi' | null>(
     null
@@ -77,9 +74,8 @@ export function RequestDetailView({
   const [showRevisionEditor, setShowRevisionEditor] = useState<boolean>(false);
   const [revisionSaveError, setRevisionSaveError] = useState('');
   const [savingRevision, setSavingRevision] = useState(false);
-  const [uploadingPdf, setUploadingPdf] = useState(false);
-  const [uploadMessage, setUploadMessage] = useState('');
-  const [uploadedPdfUrl, setUploadedPdfUrl] = useState('');
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [pdfMessage, setPdfMessage] = useState('');
   const pdfDocumentRef = useRef<HTMLDivElement>(null);
   const [revisionTitle, setRevisionTitle] = useState(request.title);
   const [revisionTargetDate, setRevisionTargetDate] = useState(request.targetDate);
@@ -846,15 +842,14 @@ export function RequestDetailView({
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  disabled={uploadingPdf}
+                  disabled={generatingPdf}
                   onClick={async () => {
                     if (!pdfDocumentRef.current) {
-                      setUploadMessage('Dokumen belum siap dibuat menjadi PDF.');
+                      setPdfMessage('Dokumen belum siap dibuat menjadi PDF.');
                       return;
                     }
-                    setUploadingPdf(true);
-                    setUploadedPdfUrl('');
-                    setUploadMessage('Membuat PDF dari dokumen pengajuan...');
+                    setGeneratingPdf(true);
+                    setPdfMessage('Sedang membuat PDF...');
                     try {
                       const html2pdf = await loadHtml2Pdf();
                       const blob = await html2pdf().set({
@@ -864,23 +859,38 @@ export function RequestDetailView({
                         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                         pagebreak: { mode: ['css', 'legacy'] },
                       }).from(pdfDocumentRef.current).outputPdf('blob');
-                      const file = new File([blob], 'Pengajuan.pdf', { type: 'application/pdf' });
-                      const result = await onUploadPdf(file);
-                      setUploadMessage(result.ok
-                        ? 'PDF berhasil dibuat dan dikirim ke Google Drive.'
-                        : result.error || 'Upload PDF gagal.');
-                      if (result.ok && result.url) setUploadedPdfUrl(result.url);
+                      const safeCode = request.code.replace(/[^a-zA-Z0-9-_]/g, '_');
+                      const datePart = new Date().toISOString().slice(0, 10);
+                      const fileName = `Pengajuan_${safeCode}_${datePart}.pdf`;
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = fileName;
+                      document.body.appendChild(link);
+                      link.click();
+                      link.remove();
+                      URL.revokeObjectURL(url);
+                      setPdfMessage('PDF berhasil dibuat dan diunduh. Silakan unggah ke folder arsip Google Drive.');
                     } catch (error) {
-                      setUploadMessage(error instanceof Error ? error.message : 'Gagal membuat atau mengunggah PDF.');
+                      setPdfMessage(error instanceof Error ? error.message : 'Gagal membuat PDF.');
                     } finally {
-                      setUploadingPdf(false);
+                      setGeneratingPdf(false);
                     }
                   }}
                   className="inline-flex items-center gap-2 rounded-[8px] border border-[#00433C] text-[#00433C] px-4 py-2 font-label text-[13px] font-semibold hover:bg-[#E8F2EF] disabled:opacity-50"
                 >
-                  <UploadCloud className="w-4 h-4" aria-hidden="true" />
-                  <span>{uploadingPdf ? 'Membuat & Mengunggah...' : 'Simpan PDF Otomatis ke Google Drive'}</span>
+                  <FileText className="w-4 h-4" aria-hidden="true" />
+                  <span>{generatingPdf ? 'Membuat PDF...' : 'Unduh PDF Pengajuan'}</span>
                 </button>
+                <a
+                  href="https://drive.google.com/drive/my-drive"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-[8px] bg-[#00433C] text-[#FFFFFF] px-4 py-2 font-label text-[13px] font-semibold hover:bg-[#0F5C53]"
+                >
+                  <FileText className="w-4 h-4" aria-hidden="true" />
+                  <span>Buka Google Drive</span>
+                </a>
                 <button
                   type="button"
                   onClick={() => window.print()}
@@ -898,10 +908,10 @@ export function RequestDetailView({
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              {uploadMessage && (
+              {pdfMessage && (
                 <div role="status" className="px-6 pb-3 text-[12px] text-[#00433C]">
-                  <p>{uploadMessage}</p>
-                  {uploadedPdfUrl && <a href={uploadedPdfUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block font-semibold underline">Buka PDF yang baru diunggah</a>}
+                  <p>{pdfMessage}</p>
+                  <p className="mt-1">Setelah PDF terunduh, buka Google Drive, masuk ke folder arsip pengajuan dana SIT Qudwah, lalu unggah file PDF tersebut.</p>
                 </div>
               )}
             </div>
