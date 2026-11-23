@@ -112,6 +112,7 @@ export function RequestDetailView({
   const treasurerSignerRole = isAboveTwoMillion ? 'bendahara-umum' : 'bendahara-sekolah';
   const treasurerSignerNiy = accounts.find((account) => account.name === treasurerSignerName && account.role === treasurerSignerRole)?.niy || 'Belum tersedia';
   const directorSignerNiy = accounts.find((account) => account.name === directorSignerName && account.role === 'direktur')?.niy || 'Belum tersedia';
+  const requesterSignerNiy = accounts.find((account) => account.name === request.requesterName)?.niy || 'Belum tersedia';
 
   const completedCount = request.stages.filter(
     (s) => s.state === 'done'
@@ -1075,6 +1076,7 @@ export function RequestDetailView({
                     <p className="font-semibold text-[#191C1B] underline">
                       {request.requesterName}
                     </p>
+                    <p className="text-[11px] text-[#3F4947]">NIY: {requesterSignerNiy}</p>
                     <p className="text-[11px] text-[#3F4947]">
                       {request.requesterRole}
                     </p>
@@ -1270,6 +1272,7 @@ export function RequestDetailView({
             <p className="font-semibold text-[#191C1B] underline">
               {request.requesterName}
             </p>
+            <p className="text-[11px] text-[#3F4947]">NIY: {requesterSignerNiy}</p>
             <p className="text-[11px] text-[#3F4947]">
               {request.requesterRole}
             </p>
