@@ -369,19 +369,25 @@ export default function App() {
     });
     if (error) {
       let detail = error.message || 'Upload gagal.';
-      const context = (error as { context?: Response }).context;
-      if (context) {
+      const context = (error as { context?: unknown }).context;
+      if (context && typeof context === 'object') {
+        const response = context as { status?: number; text?: () => Promise<string>; clone?: () => { text: () => Promise<string> } };
         try {
-          const responseBody = await context.clone().json();
-          detail = responseBody?.error || responseBody?.message || detail;
+          const raw = await (response.clone ? response.clone().text() : response.text?.() || Promise.resolve(''));
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              detail = parsed.error || parsed.message || parsed.msg || raw;
+            } catch {
+              detail = raw.slice(0, 700);
+            }
+          }
         } catch {
-          try {
-            const responseText = await context.clone().text();
-            if (responseText) detail = responseText.slice(0, 500);
-          } catch { /* gunakan pesan standar */ }
+          detail = error.message || 'Server menolak permintaan upload dan isi respons tidak dapat dibaca.';
         }
+        return { ok: false, error: `Upload gagal (HTTP ${response.status || 'tidak diketahui'}): ${detail}` };
       }
-      return { ok: false, error: `Server upload (${context?.status || 'error'}): ${detail}` };
+      return { ok: false, error: `Upload gagal: ${detail}. Periksa apakah Edge Function upload-request-pdf sudah aktif di Supabase.` };
     }
     if (data?.error) return { ok: false, error: data.error };
     if (!data?.success || !data?.file?.id) {
