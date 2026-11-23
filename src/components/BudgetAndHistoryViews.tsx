@@ -502,15 +502,10 @@ export function ProfileView({
     e.preventDefault();
     if (!isDirector || !editingAccount) return;
 
-    if (!editName.trim() || !editEmail.trim() || !editNiy.trim() || !editPassword.trim()) {
+    if (!editName.trim() || !editEmail.trim() || !editNiy.trim()) {
       setEditError('Nama lengkap, NIY, email, dan kata sandi wajib diisi.');
       return;
     }
-    if (editPassword.trim().length < 6) {
-      setEditError('Kata sandi minimal 6 karakter.');
-      return;
-    }
-
     const result = await onUpdateAccount(editingAccount.id, {
       name: editName.trim(),
       role: editRole,
@@ -1206,7 +1201,7 @@ export function ProfileView({
                   htmlFor="edit-acc-password"
                   className="font-label text-[13px] font-semibold text-[#191C1B]"
                 >
-                  Kata Sandi
+                  Kata Sandi (opsional)
                 </label>
                 <input
                   id="edit-acc-password"
