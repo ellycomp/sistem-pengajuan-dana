@@ -27,23 +27,38 @@ for (const [folder, size] of Object.entries(sizes)) {
 }
 
 const drawable = path.join(res, 'drawable');
+const drawableAnyDpiV24 = path.join(res, 'drawable-anydpi-v24');
 const adaptive = path.join(res, 'mipmap-anydpi-v26');
 await fs.mkdir(drawable, { recursive: true });
+await fs.mkdir(drawableAnyDpiV24, { recursive: true });
 await fs.mkdir(adaptive, { recursive: true });
 
-// Crop the white margins around the official vector logo, then center it inside
-// Android's adaptive-icon safe area. Keep the school name readable.
+// Android adaptive icons use a 108dp canvas with a 66dp safe area.
+// Crop only the outer white margin, then scale the complete school emblem
+// (including the school name) into the safe area with transparent padding.
 const foregroundPng = await sharp(svg)
   .trim({ background: '#FFFFFF', threshold: 18 })
-  .resize(300, 300, { fit: 'contain', background: '#FFFFFF' })
+  .resize(264, 264, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
   .extend({
-    top: 66, bottom: 66, left: 66, right: 66,
-    background: '#FFFFFF'
+    top: 84, bottom: 84, left: 84, right: 84,
+    background: { r: 255, g: 255, b: 255, alpha: 0 }
   })
   .png()
   .toBuffer();
-await fs.writeFile(path.join(drawable, 'sit_qudwah_launcher_foreground.png'), foregroundPng);
-await fs.writeFile(path.join(drawable, 'sit_qudwah_launcher_background.xml'),
+
+// Replace Capacitor's exact foreground resource name in the app resource
+// namespace. Remove the library-style vector defaults that caused the
+// green-gradient-only launcher icon on Android 8+.
+for (const file of [
+  path.join(drawableAnyDpiV24, 'ic_launcher_foreground.xml'),
+  path.join(drawableAnyDpiV24, '$ic_launcher_foreground__0.xml'),
+]) {
+  await fs.rm(file, { force: true });
+}
+await fs.writeFile(path.join(drawable, 'ic_launcher_foreground.png'), foregroundPng);
+await fs.writeFile(path.join(drawableAnyDpiV24, 'ic_launcher_foreground.png'), foregroundPng);
+
+await fs.writeFile(path.join(drawable, 'ic_launcher_background.xml'),
   `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="#FFFFFF" />
@@ -51,8 +66,8 @@ await fs.writeFile(path.join(drawable, 'sit_qudwah_launcher_background.xml'),
 
 const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/sit_qudwah_launcher_background" />
-    <foreground android:drawable="@drawable/sit_qudwah_launcher_foreground" />
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
 </adaptive-icon>
 `;
 await fs.writeFile(path.join(adaptive, 'ic_launcher.xml'), adaptiveXml, 'utf8');
