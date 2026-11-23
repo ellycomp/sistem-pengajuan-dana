@@ -404,8 +404,10 @@ export default function App() {
           // Fall back to the SDK error message below.
         }
       }
+      const status = (error as any)?.context?.status;
       const message = serverMessage || error?.message || 'Gagal membuat akun.';
-      return { ok: false, error: serverDetail ? `${message} — ${serverDetail}` : message };
+      const statusText = status ? ` (HTTP ${status})` : '';
+      return { ok: false, error: `${message}${statusText}${serverDetail ? ` — ${serverDetail}` : ''}`;
     }
     const created = data.profile;
     const newAccount: UserAccount = {
@@ -415,7 +417,7 @@ export default function App() {
       role: created.role,
       title: created.title,
       unit: created.unit,
-      niy: created.niy || payload.niy.trim(),
+      niy: payload.niy.trim(),
       avatar: makeAvatarInitials(created.name),
       password: '',
       isDefault: false,
@@ -460,15 +462,6 @@ export default function App() {
       return { ok: false, error: 'Akun tidak ditemukan.' };
     }
     if (!supabase) return { ok: false, error: 'Koneksi Supabase belum tersedia.' };
-    if (payload.niy.trim() !== (target.niy || '').trim()) {
-      const { data: niyResult, error: niyError } = await supabase.functions.invoke('manage-staff-account', {
-        body: { action: 'update_niy', userId: accountId, niy: payload.niy.trim() },
-      });
-      if (niyError || niyResult?.error) {
-        return { ok: false, error: niyResult?.error || niyError?.message || 'NIY gagal disimpan. Periksa apakah kolom NIY sudah tersedia di database.' };
-      }
-    }
-
     const safeRole: RoleId =
       accountId === currentUser.id ? 'direktur' : payload.role;
 
