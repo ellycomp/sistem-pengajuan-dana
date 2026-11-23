@@ -840,7 +840,7 @@ export function RequestDetailView({
                   Pratinjau Cetak Hasil Akhir Pengajuan
                 </h3>
                 <p className="font-body text-[13px] text-[#3F4947]">
-                  Total {formatRupiah(totalAmount)} ({treasurerSignerSubLabel.toUpperCase()})
+                  Total {formatRupiah(totalAmount)} ({treasurerSignerSubLabel})
                   · Penandatangan: Pengaju, {treasurerSignerRoleLabel}, &amp;
                   Direktur
                 </p>
@@ -1079,7 +1079,7 @@ export function RequestDetailView({
                     </p>
                     <p className="text-[11px] text-[#3F4947]">NIY: {requesterSignerNiy}</p>
                     <p className="text-[11px] text-[#3F4947]">
-                      {request.requesterRole.toUpperCase()}
+                      {request.requesterRole.charAt(0).toUpperCase() + request.requesterRole.slice(1)}
                     </p>
                   </div>
 
@@ -1096,7 +1096,7 @@ export function RequestDetailView({
                     </p>
                     <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy}</p>
                     <p className="text-[11px] text-[#3F4947]">
-                      {treasurerSignerSubLabel.toUpperCase()}
+                      {treasurerSignerSubLabel}
                     </p>
                   </div>
 
@@ -1275,7 +1275,7 @@ export function RequestDetailView({
             </p>
             <p className="text-[11px] text-[#3F4947]">NIY: {requesterSignerNiy}</p>
             <p className="text-[11px] text-[#3F4947]">
-              {request.requesterRole.toUpperCase()}
+              {request.requesterRole.charAt(0).toUpperCase() + request.requesterRole.slice(1)}
             </p>
           </div>
 
@@ -1292,7 +1292,7 @@ export function RequestDetailView({
             </p>
             <p className="text-[11px] text-[#3F4947]">NIY: {treasurerSignerNiy}</p>
             <p className="text-[11px] text-[#3F4947]">
-              {treasurerSignerSubLabel.toUpperCase()}
+              {treasurerSignerSubLabel}
             </p>
           </div>
 
