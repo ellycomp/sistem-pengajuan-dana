@@ -51,8 +51,11 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
     }
     setResetBusy(true);
     setResetMessage('');
+    // Always return password-recovery links to the deployed GitHub Pages app.
+    // Using window.location.origin alone can produce localhost:3000 in preview/dev builds.
+    const productionRedirect = 'https://ellycomp.github.io/sistem-pengajuan-dana/';
     const result = await supabase.auth.resetPasswordForEmail(targetEmail, {
-      redirectTo: window.location.origin + '/sistem-pengajuan-dana/',
+      redirectTo: productionRedirect,
     });
     setResetBusy(false);
     setResetMessage(result.error
