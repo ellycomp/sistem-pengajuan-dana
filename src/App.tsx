@@ -368,7 +368,10 @@ export default function App() {
       },
     });
     if (error || data?.error) return { ok: false, error: data?.error || error?.message || 'Upload gagal.' };
-    return { ok: true, url: data?.file?.webViewLink };
+    if (!data?.success || !data?.file?.id) {
+      return { ok: false, error: 'Google Drive tidak mengonfirmasi penyimpanan file. Periksa konfigurasi folder arsip.' };
+    }
+    return { ok: true, url: data.file.webViewLink || `https://drive.google.com/file/d/${data.file.id}/view` };
   };
 
   const handleAddAccount = async (payload: {
