@@ -33,7 +33,6 @@ export interface UserProfile {
   avatar: string;
   email: string;
   unit: string;
-  niy?: string;
 }
 
 export interface UserAccount extends UserProfile {
@@ -48,7 +47,6 @@ export interface ApprovalStage {
   roleLabel: string;
   personName: string;
   personTitle: string;
-  personNiy?: string;
   state: StageState;
   note?: string;
   timestamp?: string;
@@ -75,7 +73,6 @@ export interface FundRequest {
   budgetCategoryName: string;
   unit: string;
   requesterName: string;
-  requesterNiy: string;
   requesterRole: string;
   submittedDate: string;
   targetDate: string;
