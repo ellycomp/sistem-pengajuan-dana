@@ -879,7 +879,7 @@ export function RequestDetailView({
                   className="inline-flex items-center gap-2 rounded-[8px] border border-[#00433C] text-[#00433C] px-4 py-2 font-label text-[13px] font-semibold hover:bg-[#E8F2EF] disabled:opacity-50"
                 >
                   <UploadCloud className="w-4 h-4" aria-hidden="true" />
-                  <span>{uploadingPdf ? 'Membuat & Mengunggah...' : 'Buat PDF & Upload ke Google Drive'}</span>
+                  <span>{uploadingPdf ? 'Membuat & Mengunggah...' : 'Simpan PDF Otomatis ke Google Drive'}</span>
                 </button>
                 <button
                   type="button"
@@ -887,7 +887,7 @@ export function RequestDetailView({
                   className="inline-flex items-center gap-2 rounded-[8px] bg-[#00433C] text-[#FFFFFF] px-4 py-2 font-label text-[13px] font-semibold hover:bg-[#0F5C53]"
                 >
                   <Printer className="w-4 h-4" aria-hidden="true" />
-                  <span>Cetak / Simpan PDF</span>
+                  <span>Cetak Manual / Simpan PDF</span>
                 </button>
                 <button
                   type="button"
