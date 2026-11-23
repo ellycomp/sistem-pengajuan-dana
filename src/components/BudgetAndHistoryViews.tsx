@@ -1210,7 +1210,7 @@ export function ProfileView({
                 </label>
                 <input
                   id="edit-acc-password"
-                  type="text"
+                  type="password"
                   value={editPassword}
                   onChange={(e) => setEditPassword(e.target.value)}
                   className="w-full rounded-[8px] border border-[#BEC9C6] bg-[#FFFFFF] px-3 py-2 text-[14px] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
