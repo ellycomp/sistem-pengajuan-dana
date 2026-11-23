@@ -114,12 +114,56 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  if (input.action === "update_profile") {
+    const accountId = String(input.accountId ?? "").trim();
+    const name = String(input.name ?? "").trim();
+    const email = String(input.email ?? "").trim().toLowerCase();
+    const role = String(input.role ?? "");
+    const title = String(input.title ?? "").trim();
+    const unit = String(input.unit ?? "").trim();
+    const password = String(input.password ?? "");
+    const niy = String(input.niy ?? "").trim() || null;
+    const allowedRoles = ["guru", "sarana", "bendahara-sekolah", "bendahara-umum", "direktur"];
+
+    if (!accountId || !name || !email || !title || !unit || !allowedRoles.includes(role)) {
+      return json({ error: "Data akun belum lengkap." }, 400);
+    }
+    if (password && password.length < 6) {
+      return json({ error: "Kata sandi minimal 6 karakter." }, 400);
+    }
+
+    const authUpdates: { email: string; email_confirm: boolean; password?: string } = {
+      email,
+      email_confirm: true,
+    };
+    if (password) authUpdates.password = password;
+    const { error: authUpdateError } = await admin.auth.admin.updateUserById(accountId, authUpdates);
+    if (authUpdateError) {
+      console.error("Failed updating staff Auth account", authUpdateError.message);
+      return json({ error: "Email atau kata sandi akun gagal diperbarui.", detail: authUpdateError.message }, 400);
+    }
+
+    const { data: profile, error: profileError } = await admin
+      .from("profiles")
+      .update({ name, email, role, title, unit, niy })
+      .eq("id", accountId)
+      .select("id, name, email, role, title, unit, avatar, niy")
+      .single();
+
+    if (profileError || !profile) {
+      console.error("Failed updating staff profile", profileError?.message);
+      return json({ error: "Profil akun gagal diperbarui.", detail: profileError?.message ?? "Profil tidak ditemukan." }, 500);
+    }
+    return json({ profile });
+  }
+
   if (input.action !== "create") return json({ error: "Aksi belum didukung." }, 400);
   const name = String(input.name ?? "").trim();
   const email = String(input.email ?? "").trim().toLowerCase();
   const password = String(input.password ?? "");
   const title = String(input.title ?? "").trim();
   const unit = String(input.unit ?? "").trim();
+  const niy = String(input.niy ?? "").trim() || null;
   const allowedRoles = ["guru", "sarana", "bendahara-sekolah", "bendahara-umum", "direktur"];
   const role = String(input.role ?? "");
 
@@ -149,8 +193,9 @@ Deno.serve(async (req: Request) => {
       title,
       unit,
       avatar,
+      niy,
     })
-    .select("id, name, email, role, title, unit, avatar")
+    .select("id, name, email, role, title, unit, avatar, niy")
     .single();
 
   if (profileError || !profile) {
