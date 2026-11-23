@@ -27,27 +27,32 @@ for (const [folder, size] of Object.entries(sizes)) {
 }
 
 const drawable = path.join(res, 'drawable');
-const drawableAnyDpiV24 = path.join(res, 'drawable-anydpi-v24');
 const adaptive = path.join(res, 'mipmap-anydpi-v26');
 await fs.mkdir(drawable, { recursive: true });
-await fs.mkdir(drawableAnyDpiV24, { recursive: true });
 await fs.mkdir(adaptive, { recursive: true });
+
+// Crop the white margins around the official vector logo, then center it inside
+// Android's adaptive-icon safe area. Keep the school name readable.
 const foregroundPng = await sharp(svg)
-  .resize(324, 324, { fit: 'contain' })
+  .trim({ background: '#FFFFFF', threshold: 18 })
+  .resize(300, 300, { fit: 'contain', background: '#FFFFFF' })
+  .extend({
+    top: 66, bottom: 66, left: 66, right: 66,
+    background: '#FFFFFF'
+  })
   .png()
   .toBuffer();
-await fs.writeFile(path.join(drawable, 'ic_launcher_foreground.png'), foregroundPng);
-
-// Put an app-owned foreground in drawable-anydpi-v24 as well. Android gives
-// this qualified resource precedence over Capacitor's library vector drawable
-// with the same name when resolving the adaptive icon on Android 8+.
-await fs.writeFile(path.join(drawableAnyDpiV24, 'ic_launcher_foreground.png'), foregroundPng);
-await fs.rm(path.join(drawableAnyDpiV24, 'ic_launcher_foreground.xml'), { force: true });
+await fs.writeFile(path.join(drawable, 'sit_qudwah_launcher_foreground.png'), foregroundPng);
+await fs.writeFile(path.join(drawable, 'sit_qudwah_launcher_background.xml'),
+  `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FFFFFF" />
+</shape>`);
 
 const adaptiveXml = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@android:color/white" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <background android:drawable="@drawable/sit_qudwah_launcher_background" />
+    <foreground android:drawable="@drawable/sit_qudwah_launcher_foreground" />
 </adaptive-icon>
 `;
 await fs.writeFile(path.join(adaptive, 'ic_launcher.xml'), adaptiveXml, 'utf8');
