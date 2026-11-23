@@ -114,17 +114,34 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  if (input.action === "update_niy") {
+    const userId = String(input.userId ?? "").trim();
+    const niy = String(input.niy ?? "").trim();
+    if (!userId || !niy) return json({ error: "NIY wajib diisi." }, 400);
+    const { data: updated, error: updateError } = await admin
+      .from("profiles")
+      .update({ niy })
+      .eq("id", userId)
+      .select("id, niy")
+      .single();
+    if (updateError || !updated) {
+      return json({ error: updateError?.message ?? "NIY gagal diperbarui." }, 400);
+    }
+    return json({ profile: updated });
+  }
+
   if (input.action !== "create") return json({ error: "Aksi belum didukung." }, 400);
   const name = String(input.name ?? "").trim();
   const email = String(input.email ?? "").trim().toLowerCase();
   const password = String(input.password ?? "");
   const title = String(input.title ?? "").trim();
   const unit = String(input.unit ?? "").trim();
+  const niy = String(input.niy ?? "").trim();
   const allowedRoles = ["guru", "sarana", "bendahara-sekolah", "bendahara-umum", "direktur"];
   const role = String(input.role ?? "");
 
-  if (!name || !email || !title || !unit || password.length < 6 || !allowedRoles.includes(role)) {
-    return json({ error: "Lengkapi nama, email, jabatan, unit, peran, dan kata sandi minimal 6 karakter." }, 400);
+  if (!name || !email || !title || !unit || !niy || password.length < 6 || !allowedRoles.includes(role)) {
+    return json({ error: "Lengkapi nama, NIY, email, jabatan, unit, peran, dan kata sandi minimal 6 karakter." }, 400);
   }
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -148,9 +165,10 @@ Deno.serve(async (req: Request) => {
       role,
       title,
       unit,
+      niy,
       avatar,
     })
-    .select("id, name, email, role, title, unit, avatar")
+    .select("id, name, email, role, title, unit, niy, avatar")
     .single();
 
   if (profileError || !profile) {
