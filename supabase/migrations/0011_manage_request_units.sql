@@ -29,3 +29,9 @@ values
   ('Wakil Humas', true),
   ('Kelas', true)
 on conflict (name) do nothing;
+
+-- Berikan hak akses tabel kepada pengguna login; RLS tetap membatasi perubahan kepada Direktur.
+grant select, insert, update on table public.request_units to authenticated;
+
+-- Minta PostgREST memuat ulang cache skema agar tabel langsung dikenali API.
+notify pgrst, 'reload schema';
