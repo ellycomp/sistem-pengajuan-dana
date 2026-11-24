@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import { AppInstallPlugin } from '@m430/capacitor-app-install';
+import { ApkFiles } from '@ahmed-sarmoum/capacitor-apk-installer';
 import { APP_VERSION } from '../version';
 
 type ReleaseInfo = {
@@ -74,13 +74,6 @@ export function AndroidUpdateChecker() {
     setBusy(true);
     setMessage('Memeriksa izin pemasangan...');
     try {
-      const permission = await AppInstallPlugin.canInstallUnknownApps();
-      if (!permission.granted) {
-        setMessage('Izinkan pemasangan aplikasi dari aplikasi ini. Setelah kembali, tekan Perbarui Sekarang sekali lagi.');
-        await AppInstallPlugin.openInstallUnknownAppsSettings();
-        return;
-      }
-
       setMessage('Mengunduh pembaruan aplikasi...');
       const response = await fetch(apk.browser_download_url, { cache: 'no-store' });
       if (!response.ok) throw new Error('Unduhan APK gagal. Silakan coba lagi.');
@@ -94,7 +87,7 @@ export function AndroidUpdateChecker() {
         recursive: true,
       });
       setMessage('Unduhan selesai. Membuka pemasang Android...');
-      await AppInstallPlugin.installApk({ filePath: saved.uri });
+      await ApkFiles.installApk({ path: saved.uri.replace(/^file:\/\//, '') });
       setMessage('Pemasang Android telah dibuka. Ikuti konfirmasi pada layar untuk menyelesaikan pembaruan.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Pembaruan gagal diproses.');
