@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
-import { CheckCircle2, X } from 'lucide-react';
+import { CheckCircle2, RefreshCw, X } from 'lucide-react';
 import {
   BudgetView,
   HistoryView,
@@ -1099,6 +1099,17 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
       />
+
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        title="Muat ulang halaman dan data terbaru"
+        aria-label="Muat ulang halaman"
+        className="fixed right-4 bottom-24 lg:bottom-6 z-40 inline-flex items-center gap-2 rounded-full bg-[#00433C] px-4 py-3 text-white shadow-lg hover:bg-[#00332E] active:scale-95 transition"
+      >
+        <RefreshCw className="h-5 w-5" aria-hidden="true" />
+        <span className="hidden sm:inline text-[13px] font-semibold">Refresh</span>
+      </button>
 
       <div className="flex-1 min-w-0 flex flex-col">
         {activeTab === 'pengajuan' && (
