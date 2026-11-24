@@ -531,7 +531,8 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
             </div>
             <p className="mt-4 text-sm font-semibold text-[#191C1B]">Yang baru pada versi ini:</p>
             <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-5 text-[#3F4947]">
-              <li>Memperbaiki pemuatan aplikasi Android agar menggunakan berkas aplikasi di dalam APK.</li>
+              <li>Menambahkan pemeriksaan pembaruan langsung dari aplikasi Android.</li>
+              <li>Menambahkan unduhan APK dan membuka pemasang Android dari aplikasi.</li>
               <li>Meningkatkan kestabilan saat aplikasi dibuka di perangkat Android.</li>
               <li>Mempertahankan koneksi ke database Supabase; data pengajuan tetap tersimpan di server.</li>
             </ul>
