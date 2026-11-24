@@ -1,5 +1,5 @@
-const CACHE_NAME = 'sit-qudwah-pwa-v13';
-const APP_ROOT = '/sistem-pengajuan-dana/';
+const CACHE_NAME = 'sit-qudwah-pwa-v14';
+const APP_ROOT = '/';
 const APP_SHELL = [APP_ROOT, APP_ROOT + 'manifest.webmanifest', APP_ROOT + 'pwa-icon.svg'];
 const BRAND_ASSETS = [
   APP_ROOT + 'logo-sit-qudwah.svg',
@@ -32,9 +32,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin || !url.pathname.startsWith(APP_ROOT)) return;
 
-  // Logo dan identitas aplikasi selalu diperiksa ke server terlebih dahulu,
-  // agar perubahan lambang dari versi web segera tampil di Android/iOS PWA.
-  if (BRAND_ASSETS.some((asset) => url.pathname === asset)) {
+  if (BRAND_ASSETS.some((asset) => url.pathname === asset.split('?')[0])) {
     event.respondWith(
       fetch(request).then((response) => {
         if (response.ok) {
