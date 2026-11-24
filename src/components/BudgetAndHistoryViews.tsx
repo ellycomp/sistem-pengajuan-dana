@@ -234,10 +234,13 @@ export function BudgetView({ budgetLines, requests, currentUser, onAddBudgetLine
 
 interface HistoryViewProps {
   requests: FundRequest[];
+  currentRole: RoleId;
   onOpenDetail: (requestId: string) => void;
+  onDeleteRequest: (requestId: string) => Promise<void>;
 }
 
-export function HistoryView({ requests, onOpenDetail }: HistoryViewProps) {
+export function HistoryView({ requests, currentRole, onOpenDetail, onDeleteRequest }: HistoryViewProps) {
+  const canDeleteHistory = currentRole === 'direktur';
   const [query, setQuery] = useState<string>('');
 
   const sorted = useMemo(() => {
@@ -331,58 +334,75 @@ export function HistoryView({ requests, onOpenDetail }: HistoryViewProps) {
                 .find((s) => s.state === 'done' || s.state === 'revisi');
 
             return (
-              <button
+              <div
                 key={req.id}
-                type="button"
-                onClick={() => onOpenDetail(req.id)}
-                className="w-full text-left rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-4 flex flex-wrap items-center justify-between gap-4 hover:bg-[#F2F4F2] transition-colors"
+                className="w-full rounded-[12px] border border-[#BEC9C6] bg-[#FFFFFF] p-3 sm:p-4 flex items-center gap-3 hover:bg-[#F2F4F2] transition-colors"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[12px] font-medium text-[#3F4947]">
-                      {req.code}
-                    </span>
-                    <span className="text-[#3F4947]">·</span>
-                    <span className="font-label text-[12px] font-medium text-[#191C1B]">
-                      {req.schoolUnit}
-                    </span>
-                    <span className="text-[#3F4947]">·</span>
-                    <span className="font-label text-[12px] text-[#3F4947]">
-                      {req.budgetCategoryName}
-                    </span>
+                <button
+                  type="button"
+                  onClick={() => onOpenDetail(req.id)}
+                  className="min-w-0 flex-1 text-left flex flex-wrap items-center justify-between gap-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-[12px] font-medium text-[#3F4947]">
+                        {req.code}
+                      </span>
+                      <span className="text-[#3F4947]">·</span>
+                      <span className="font-label text-[12px] font-medium text-[#191C1B]">
+                        {req.schoolUnit}
+                      </span>
+                      <span className="text-[#3F4947]">·</span>
+                      <span className="font-label text-[12px] text-[#3F4947]">
+                        {req.budgetCategoryName}
+                      </span>
+                    </div>
+                    <p className="font-title text-[16px] font-semibold text-[#191C1B] mt-0.5">
+                      {req.title}
+                    </p>
+                    <p className="font-body text-[13px] text-[#3F4947] mt-0.5">
+                      Terakhir: {lastDone?.personName || req.requesterName} (
+                      {lastDone?.timestamp || req.submittedDate})
+                    </p>
                   </div>
-                  <p className="font-title text-[16px] font-semibold text-[#191C1B] mt-0.5">
-                    {req.title}
-                  </p>
-                  <p className="font-body text-[13px] text-[#3F4947] mt-0.5">
-                    Terakhir: {lastDone?.personName || req.requesterName} (
-                    {lastDone?.timestamp || req.submittedDate})
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-4 shrink-0">
-                  <div className="text-right">
-                    <p className="font-label text-[15px] font-semibold text-[#191C1B] tabular-nums">
-                      {formatRupiah(total)}
-                    </p>
-                    <p
-                      className={`font-label text-[12px] font-medium ${
-                        req.status === 'disetujui'
-                          ? 'text-[#14532D]'
-                          : req.status === 'revisi'
-                          ? 'text-[#BA1A1A]'
-                          : 'text-[#92400E]'
-                      }`}
-                    >
-                      {getStatusLabel(req)}
-                    </p>
+                  <div className="flex items-center gap-4 shrink-0">
+                    <div className="text-right">
+                      <p className="font-label text-[15px] font-semibold text-[#191C1B] tabular-nums">
+                        {formatRupiah(total)}
+                      </p>
+                      <p
+                        className={`font-label text-[12px] font-medium ${
+                          req.status === 'disetujui'
+                            ? 'text-[#14532D]'
+                            : req.status === 'revisi'
+                            ? 'text-[#BA1A1A]'
+                            : 'text-[#92400E]'
+                        }`}
+                      >
+                        {getStatusLabel(req)}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-[#3F4947]" aria-hidden="true" />
                   </div>
-                  <ChevronRight
-                    className="w-5 h-5 text-[#3F4947]"
-                    aria-hidden="true"
-                  />
-                </div>
-              </button>
+                </button>
+                {canDeleteHistory && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`Hapus riwayat pengajuan "${req.title}" secara permanen? Tindakan ini tidak dapat dibatalkan.`)) {
+                        void onDeleteRequest(req.id);
+                      }
+                    }}
+                    aria-label={`Hapus riwayat ${req.code}`}
+                    title="Hapus Riwayat"
+                    className="shrink-0 inline-flex items-center justify-center gap-1 rounded-[8px] border border-[#BA1A1A] px-3 py-2 text-[13px] font-semibold text-[#BA1A1A] hover:bg-[#FEF2F2]"
+                  >
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
+                    <span className="hidden sm:inline">Hapus</span>
+                  </button>
+                )}
+              </div>
             );
           })
           )}
