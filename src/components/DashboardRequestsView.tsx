@@ -64,6 +64,10 @@ export function DashboardRequestsView({
   const [schoolUnitFilter, setSchoolUnitFilter] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [requestToDelete, setRequestToDelete] = useState<FundRequest | null>(null);
+  const [editingUnit, setEditingUnit] = useState<string | null>(null);
+  const [editedUnitName, setEditedUnitName] = useState<string>('');
+  const [unitEditError, setUnitEditError] = useState<string>('');
+  const [savingUnitEdit, setSavingUnitEdit] = useState<boolean>(false);
   const requesterRoleOptions = currentUser.name === 'Rosyidatul Alyah'
     ? ['Wali Kelas 1', 'Wakil Bidang Akademik']
     : currentUser.name === 'Eka Priyana'
@@ -262,11 +266,10 @@ export function DashboardRequestsView({
               {requestUnits.map((unitName) => (
                 <span key={unitName} className="inline-flex items-center gap-2 rounded-full bg-[#E8F2EF] px-3 py-1.5 text-[12px] font-medium text-[#00433C]">
                   {unitName}
-                  <button type="button" aria-label={`Edit ${unitName}`} title="Edit nama unit" onClick={async () => {
-                    const newName = window.prompt('Ubah nama Unit Pengaju:', unitName);
-                    if (newName === null || newName.trim() === unitName) return;
-                    const result = await onEditRequestUnit(unitName, newName);
-                    if (!result.ok) window.alert(result.error || 'Nama unit gagal diubah.');
+                  <button type="button" aria-label={`Edit ${unitName}`} title="Edit nama unit" onClick={() => {
+                    setEditingUnit(unitName);
+                    setEditedUnitName(unitName);
+                    setUnitEditError('');
                   }} className="inline-flex items-center justify-center rounded p-1 hover:bg-white"><Pencil className="w-3.5 h-3.5" aria-hidden="true" /></button>
                   <button type="button" aria-label={`Nonaktifkan ${unitName}`} onClick={async () => {
                     if (window.confirm(`Nonaktifkan unit "${unitName}"? Riwayat lama tetap ada.`)) {
@@ -572,6 +575,35 @@ export function DashboardRequestsView({
           )}
         </section>
       </main>
+
+      {/* Modal Edit Unit Pengaju */}
+      {editingUnit !== null && (
+        <div className="fixed inset-0 z-[70] bg-[#191C1B]/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="edit-unit-title">
+          <form className="w-full max-w-md rounded-[12px] bg-white p-5 shadow-xl flex flex-col gap-4" onSubmit={async (e) => {
+            e.preventDefault();
+            const cleanName = editedUnitName.trim();
+            if (!cleanName) { setUnitEditError('Nama unit wajib diisi.'); return; }
+            if (cleanName === editingUnit) { setEditingUnit(null); return; }
+            setSavingUnitEdit(true);
+            setUnitEditError('');
+            const result = await onEditRequestUnit(editingUnit, cleanName);
+            setSavingUnitEdit(false);
+            if (!result.ok) { setUnitEditError(result.error || 'Nama unit gagal diubah.'); return; }
+            setEditingUnit(null);
+          }}>
+            <div>
+              <h2 id="edit-unit-title" className="font-title text-[18px] font-semibold text-[#191C1B]">Edit Unit Pengaju</h2>
+              <p className="mt-1 text-[13px] text-[#3F4947]">Ubah nama unit. Riwayat pengajuan sebelumnya tetap tersimpan.</p>
+            </div>
+            <input autoFocus type="text" value={editedUnitName} onChange={(e) => setEditedUnitName(e.target.value)} className="w-full rounded-[8px] border border-[#BEC9C6] px-3 py-2.5 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]" />
+            {unitEditError && <p role="alert" className="rounded-[8px] bg-[#FFDAD6] px-3 py-2 text-[13px] text-[#9B1C1C]">{unitEditError}</p>}
+            <div className="flex justify-end gap-2">
+              <button type="button" disabled={savingUnitEdit} onClick={() => setEditingUnit(null)} className="rounded-[8px] border border-[#BEC9C6] px-4 py-2 text-[13px] font-semibold">Batal</button>
+              <button type="submit" disabled={savingUnitEdit} className="rounded-[8px] bg-[#00433C] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50">{savingUnitEdit ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Modal Konfirmasi Hapus Pengajuan */}
       {requestToDelete && (
