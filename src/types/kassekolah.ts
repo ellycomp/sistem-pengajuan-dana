@@ -53,9 +53,7 @@ export interface ApprovalStage {
   timestamp?: string;
 }
 
-export type SchoolUnit =
-  | 'SD IT Qudwah Sungai Rengit'
-  | 'KB Islam Terpadu Qudwah';
+export type SchoolUnit = string;
 
 export interface LineItem {
   id: string;
