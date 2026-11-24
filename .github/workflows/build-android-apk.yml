@@ -113,10 +113,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           APP_VERSION: ${{ steps.version.outputs.value }}
         run: |
-          gh release create "v$APP_VERSION" android/app/build/outputs/apk/release/app-release.apk \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "Pengajuan Dana SIT Qudwah v$APP_VERSION" \
-            --notes "Pembaruan aplikasi Pengajuan Dana SIT Qudwah versi $APP_VERSION."
+          if gh release view "v$APP_VERSION" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "v$APP_VERSION" android/app/build/outputs/apk/release/app-release.apk --repo "${GITHUB_REPOSITORY}" --clobber
+          else
+            gh release create "v$APP_VERSION" android/app/build/outputs/apk/release/app-release.apk \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "Pengajuan Dana SIT Qudwah v$APP_VERSION" \
+              --notes "Pembaruan aplikasi Pengajuan Dana SIT Qudwah versi $APP_VERSION."
+          fi
 
       - name: Upload signed release APK
         if: steps.signing.outputs.has_signing == 'true'
