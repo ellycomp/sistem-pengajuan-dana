@@ -4,7 +4,7 @@
   "webDir": "dist",
   "server": {
     "androidScheme": "https",
-    "url": "https://ellycomp.github.io/sistem-pengajuan-dana/",
+    "url": "https://pengajuandana.sitqudwahsungairengit.sch.id/",
     "cleartext": false
   }
 }
