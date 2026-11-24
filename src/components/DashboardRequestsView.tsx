@@ -11,7 +11,6 @@ import {
   formatRupiah,
   generateRequestCode,
   getStatusLabel,
-  REQUEST_UNITS,
 } from '../data/seedData';
 import {
   BudgetLine,
@@ -26,6 +25,9 @@ import { SchoolLogo } from './SchoolLogo';
 interface DashboardRequestsViewProps {
   requests: FundRequest[];
   budgetLines: BudgetLine[];
+  requestUnits: string[];
+  onAddRequestUnit: (name: string) => Promise<{ ok: boolean; error?: string }>;
+  onDeactivateRequestUnit: (name: string) => Promise<{ ok: boolean; error?: string }>;
   currentUser: UserProfile;
   onOpenDetail: (requestId: string) => void;
   onDeleteRequest: (requestId: string) => void;
@@ -44,6 +46,9 @@ interface DashboardRequestsViewProps {
 export function DashboardRequestsView({
   requests,
   budgetLines,
+  requestUnits,
+  onAddRequestUnit,
+  onDeactivateRequestUnit,
   currentUser,
   onOpenDetail,
   onDeleteRequest,
@@ -66,12 +71,12 @@ export function DashboardRequestsView({
   // Create form state
   const [title, setTitle] = useState<string>('');
   const [schoolUnit, setSchoolUnit] = useState<string>(
-    REQUEST_UNITS.includes(currentUser.unit) ? currentUser.unit : REQUEST_UNITS[0]
+    requestUnits.includes(currentUser.unit) ? currentUser.unit : (requestUnits[0] || '')
   );
   const [budgetCategoryId, setBudgetCategoryId] = useState<string>(
     budgetLines[0]?.id || 'atk'
   );
-  const [unit, setUnit] = useState<string>(REQUEST_UNITS.includes(currentUser.unit) ? currentUser.unit : REQUEST_UNITS[0]);
+  const [unit, setUnit] = useState<string>(requestUnits.includes(currentUser.unit) ? currentUser.unit : (requestUnits[0] || ''));
   const [targetDate, setTargetDate] = useState<string>('30 Nov 2026');
   const [attachmentName, setAttachmentName] = useState<string>(
     'RAB_Pengajuan_Unit.pdf'
@@ -244,6 +249,34 @@ export function DashboardRequestsView({
       </header>
 
       <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 max-w-7xl w-full mx-auto flex flex-col gap-4 lg:gap-6">
+        {currentUser.role === 'direktur' && (
+          <section className="rounded-[12px] border border-[#BEC9C6] bg-white p-4 flex flex-col gap-3">
+            <div>
+              <h2 className="font-headline text-[16px] font-semibold text-[#191C1B]">Kelola Unit Pengaju</h2>
+              <p className="font-body text-[12px] text-[#3F4947]">Khusus Direktur. Menonaktifkan unit tidak menghapus riwayat pengajuan sebelumnya.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {requestUnits.map((unitName) => (
+                <span key={unitName} className="inline-flex items-center gap-2 rounded-full bg-[#E8F2EF] px-3 py-1.5 text-[12px] font-medium text-[#00433C]">
+                  {unitName}
+                  <button type="button" aria-label={`Nonaktifkan ${unitName}`} onClick={async () => {
+                    if (window.confirm(`Nonaktifkan unit "${unitName}"? Riwayat lama tetap ada.`)) {
+                      const result = await onDeactivateRequestUnit(unitName);
+                      if (!result.ok) window.alert(result.error || 'Unit gagal dinonaktifkan.');
+                    }
+                  }} className="font-bold text-[#9B1C1C]">×</button>
+                </span>
+              ))}
+              <button type="button" onClick={async () => {
+                const name = window.prompt('Masukkan nama Unit Pengaju baru:');
+                if (name === null) return;
+                const result = await onAddRequestUnit(name);
+                if (!result.ok) window.alert(result.error || 'Unit gagal ditambahkan.');
+              }} className="rounded-full border border-dashed border-[#00433C] px-3 py-1.5 text-[12px] font-semibold text-[#00433C]">+ Tambah Unit</button>
+            </div>
+          </section>
+        )}
+
         {/* KPI Summary Strip */}
         <section
           aria-label="Ringkasan Pengajuan"
@@ -325,7 +358,7 @@ export function DashboardRequestsView({
               className="rounded-[8px] border border-[#BEC9C6] bg-[#FFFFFF] px-3 py-2 font-body text-[13px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
             >
               <option value="all">Semua Unit Sekolah</option>
-              {REQUEST_UNITS.map((u) => (
+              {requestUnits.map((u) => (
                 <option key={u} value={u}>
                   {u}
                 </option>
@@ -651,7 +684,7 @@ export function DashboardRequestsView({
                   onChange={(e) => { setUnit(e.target.value); setSchoolUnit(e.target.value); }}
                   className="w-full rounded-[8px] border border-[#BEC9C6] bg-white px-3 py-2 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
                 >
-                  {REQUEST_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  {requestUnits.map((u) => <option key={u} value={u}>{u}</option>)}
                 </select>
               </div>
 
