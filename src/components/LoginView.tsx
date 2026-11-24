@@ -27,6 +27,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
   const [recoveryMode, setRecoveryMode] = useState<boolean>(false);
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmNewPassword, setConfirmNewPassword] = useState<string>('');
+  const [showReleaseNotes, setShowReleaseNotes] = useState<boolean>(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -499,11 +500,43 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
           <p className="font-label text-[12px] leading-[16px] tracking-[0.2px] font-medium text-[#3F4947]">
             Beriman · Berakhlak · Berilmu
           </p>
-          <p className="font-label text-[11px] leading-[16px] text-[#66716E] tabular-nums mt-1">
-            Versi {APP_VERSION}
-          </p>
+          <div className="mt-1 flex items-center justify-center gap-2">
+            <p className="font-label text-[11px] leading-[16px] text-[#66716E] tabular-nums">
+              Versi {APP_VERSION}
+            </p>
+            <span className="text-[#AAB4B1]" aria-hidden="true">·</span>
+            <button
+              type="button"
+              onClick={() => setShowReleaseNotes(true)}
+              className="font-label text-[11px] leading-[16px] font-semibold text-[#00433C] underline underline-offset-2"
+            >
+              Informasi Pembaruan
+            </button>
+          </div>
         </footer>
       </main>
+
+      {/* Modal Informasi Pembaruan */}
+      {showReleaseNotes && (
+        <div className="fixed inset-0 z-50 bg-[#191C1B]/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="release-notes-title">
+          <section className="w-full max-w-sm rounded-[14px] border border-[#BEC9C6] bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#47766D]">Catatan Rilis</p>
+                <h3 id="release-notes-title" className="mt-1 text-lg font-bold text-[#191C1B]">Pembaruan versi {APP_VERSION}</h3>
+              </div>
+              <button type="button" onClick={() => setShowReleaseNotes(false)} aria-label="Tutup informasi pembaruan" className="rounded-lg px-2 py-1 text-xl text-[#3F4947] hover:bg-[#F2F4F2]">×</button>
+            </div>
+            <p className="mt-4 text-sm font-semibold text-[#191C1B]">Yang baru pada versi ini:</p>
+            <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-5 text-[#3F4947]">
+              <li>Memperbaiki pemuatan aplikasi Android agar menggunakan berkas aplikasi di dalam APK.</li>
+              <li>Meningkatkan kestabilan saat aplikasi dibuka di perangkat Android.</li>
+              <li>Mempertahankan koneksi ke database Supabase; data pengajuan tetap tersimpan di server.</li>
+            </ul>
+            <button type="button" onClick={() => setShowReleaseNotes(false)} className="mt-5 w-full rounded-lg bg-[#00433C] px-4 py-2.5 text-sm font-semibold text-white">Mengerti</button>
+          </section>
+        </div>
+      )}
 
       {/* Modal Bantuan Lupa Sandi */}
       {(showForgotHelp || recoveryMode) && (
