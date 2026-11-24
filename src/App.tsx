@@ -18,6 +18,7 @@ import {
   INITIAL_ACCOUNTS,
   INITIAL_BUDGET_LINES,
   INITIAL_REQUESTS,
+  REQUEST_UNITS,
   ROLE_USERS,
   TIER_CONFIGS,
 } from './data/seedData';
@@ -108,6 +109,7 @@ export default function App() {
   const [budgetLines, setBudgetLines] = useState<BudgetLine[]>(
     initial.budgetLines
   );
+  const [requestUnits, setRequestUnits] = useState<string[]>(REQUEST_UNITS);
 
   const currentAccount =
     accounts.find((a) => a.id === currentAccountId) || accounts[0];
@@ -162,12 +164,13 @@ export default function App() {
       }
 
       // Setelah profil tervalidasi, ambil data operasional dari database.
-      const [requestResult, budgetResult] = await Promise.all([
+      const [requestResult, budgetResult, unitsResult] = await Promise.all([
         supabase
           .from('fund_requests')
           .select('*, request_items(*), approval_stages(*)')
           .order('created_at', { ascending: false }),
         supabase.from('budget_lines').select('*').order('name'),
+        supabase.from('request_units').select('name').eq('active', true).order('name'),
       ]);
 
       if (!active) return;
@@ -216,6 +219,10 @@ export default function App() {
         if (initializeNavigation && cloudRequests.length > 0) {
           setSelectedRequestId(cloudRequests[0].id);
         }
+      }
+
+      if (!unitsResult.error && (unitsResult.data || []).length > 0) {
+        setRequestUnits(unitsResult.data.map((row: any) => row.name));
       }
 
       if (budgetResult.error) {
@@ -960,6 +967,30 @@ export default function App() {
     setToastMessage(`Pengajuan ${code} berhasil dikirim ke ${stageTwoReviewer!.name} (Kepala Seksi Sarana).`);
   };
 
+  const handleAddRequestUnit = async (name: string): Promise<{ ok: boolean; error?: string }> => {
+    if (currentUser.role !== 'direktur') return { ok: false, error: 'Hanya Direktur yang dapat mengelola Unit Pengaju.' };
+    const cleanName = name.trim();
+    if (!cleanName) return { ok: false, error: 'Nama unit wajib diisi.' };
+    if (requestUnits.some((unit) => unit.toLowerCase() === cleanName.toLowerCase())) return { ok: false, error: 'Nama unit sudah tersedia.' };
+    if (!supabase) return { ok: false, error: 'Koneksi database tidak tersedia.' };
+    const { error } = await supabase.from('request_units').insert({ name: cleanName, active: true });
+    if (error) return { ok: false, error: error.message };
+    setRequestUnits((prev) => [...prev, cleanName].sort((a, b) => a.localeCompare(b, 'id')));
+    setToastMessage('Unit Pengaju berhasil ditambahkan.');
+    return { ok: true };
+  };
+
+  const handleDeactivateRequestUnit = async (name: string): Promise<{ ok: boolean; error?: string }> => {
+    if (currentUser.role !== 'direktur') return { ok: false, error: 'Hanya Direktur yang dapat mengelola Unit Pengaju.' };
+    if (requestUnits.length <= 1) return { ok: false, error: 'Minimal harus tersedia satu Unit Pengaju.' };
+    if (!supabase) return { ok: false, error: 'Koneksi database tidak tersedia.' };
+    const { error } = await supabase.from('request_units').update({ active: false }).eq('name', name);
+    if (error) return { ok: false, error: error.message };
+    setRequestUnits((prev) => prev.filter((unit) => unit !== name));
+    setToastMessage('Unit dinonaktifkan. Riwayat pengajuan lama tetap tersimpan.');
+    return { ok: true };
+  };
+
   const handleAddBudgetLine = async (payload: Omit<BudgetLine, 'id' | 'usedAmount'>): Promise<{ ok: boolean; error?: string }> => {
     if (currentUser.role !== 'direktur' && currentUser.role !== 'bendahara-umum') {
       return { ok: false, error: 'Hanya Direktur atau Bendahara Umum yang dapat menambahkan pos anggaran.' };
@@ -1116,6 +1147,9 @@ export default function App() {
           <DashboardRequestsView
             requests={requests}
             budgetLines={budgetLines}
+            requestUnits={requestUnits}
+            onAddRequestUnit={handleAddRequestUnit}
+            onDeactivateRequestUnit={handleDeactivateRequestUnit}
             currentUser={currentUser}
             onOpenDetail={handleOpenDetail}
             onDeleteRequest={handleDeleteRequest}
