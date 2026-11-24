@@ -4,6 +4,7 @@ import { RoleId, UserAccount } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
 import { supabase } from '../lib/supabase';
 import { APP_VERSION } from '../version';
+import { AndroidUpdateChecker } from './AndroidUpdateChecker';
 
 interface LoginViewProps {
   accounts: UserAccount[];
@@ -513,6 +514,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
               Informasi Pembaruan
             </button>
           </div>
+          <AndroidUpdateChecker />
         </footer>
       </main>
 
