@@ -23,7 +23,9 @@
     "react-dom": "^19.0.1",
     "@supabase/supabase-js": "^2.57.0",
     "vite": "^8.3.0",
-    "@capacitor/core": "^7.4.3"
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/filesystem": "^7.1.4",
+    "@m430/capacitor-app-install": "^0.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
