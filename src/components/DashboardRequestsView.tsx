@@ -638,48 +638,6 @@ export function DashboardRequestsView({
                 </select>
               </div>
 
-              <div className="sm:col-span-2 flex flex-col gap-1">
-                <label
-                  htmlFor="req-school-unit"
-                  className="font-label text-[13px] font-semibold text-[#191C1B]"
-                >
-                  Unit yang Mengajukan
-                </label>
-                <select
-                  id="req-school-unit"
-                  value={unit}
-                  onChange={(e) => { setUnit(e.target.value); setSchoolUnit(e.target.value); }}
-                  className="w-full rounded-[8px] border border-[#BEC9C6] bg-[#FFFFFF] px-3 py-2 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
-                >
-                  {SCHOOL_UNITS.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label
-                  htmlFor="req-budget"
-                  className="font-label text-[13px] font-semibold text-[#191C1B]"
-                >
-                  Pos Anggaran
-                </label>
-                <select
-                  id="req-budget"
-                  value={budgetCategoryId}
-                  onChange={(e) => setBudgetCategoryId(e.target.value)}
-                  className="w-full rounded-[8px] border border-[#BEC9C6] px-3 py-2 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
-                >
-                  {budgetLines.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div className="flex flex-col gap-1">
                 <label
                   htmlFor="req-unit"
