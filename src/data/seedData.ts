@@ -18,6 +18,9 @@ export const REQUEST_UNITS: string[] = [
   'Kelas',
 ];
 
+// Compatibility alias for existing budget and history screens.
+export const SCHOOL_UNITS = REQUEST_UNITS;
+
 export const SIT_QUDWAH_LOGO_URL = `${import.meta.env.BASE_URL}logo-sit-qudwah.svg?v=20261123`;
 
 export const ROLE_USERS: Record<RoleId, UserProfile> = {
