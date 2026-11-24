@@ -11,7 +11,7 @@ import {
   formatRupiah,
   generateRequestCode,
   getStatusLabel,
-  SCHOOL_UNITS,
+  REQUEST_UNITS,
 } from '../data/seedData';
 import {
   BudgetLine,
@@ -53,9 +53,7 @@ export function DashboardRequestsView({
   const [statusFilter, setStatusFilter] = useState<'all' | RequestStatus>(
     'all'
   );
-  const [schoolUnitFilter, setSchoolUnitFilter] = useState<'all' | SchoolUnit>(
-    'all'
-  );
+  const [schoolUnitFilter, setSchoolUnitFilter] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [requestToDelete, setRequestToDelete] = useState<FundRequest | null>(null);
   const requesterRoleOptions = currentUser.name === 'Rosyidatul Alyah'
@@ -67,15 +65,13 @@ export function DashboardRequestsView({
 
   // Create form state
   const [title, setTitle] = useState<string>('');
-  const [schoolUnit, setSchoolUnit] = useState<SchoolUnit>(
-    currentUser.unit === 'KB Islam Terpadu Qudwah'
-      ? 'KB Islam Terpadu Qudwah'
-      : 'SD IT Qudwah Sungai Rengit'
+  const [schoolUnit, setSchoolUnit] = useState<string>(
+    REQUEST_UNITS.includes(currentUser.unit) ? currentUser.unit : REQUEST_UNITS[0]
   );
   const [budgetCategoryId, setBudgetCategoryId] = useState<string>(
     budgetLines[0]?.id || 'atk'
   );
-  const [unit, setUnit] = useState<string>(currentUser.unit);
+  const [unit, setUnit] = useState<string>(REQUEST_UNITS.includes(currentUser.unit) ? currentUser.unit : REQUEST_UNITS[0]);
   const [targetDate, setTargetDate] = useState<string>('30 Nov 2026');
   const [attachmentName, setAttachmentName] = useState<string>(
     'RAB_Pengajuan_Unit.pdf'
@@ -89,13 +85,13 @@ export function DashboardRequestsView({
     const q = searchQuery.trim().toLowerCase();
     return requests.filter((req) => {
       if (statusFilter !== 'all' && req.status !== statusFilter) return false;
-      if (schoolUnitFilter !== 'all' && req.schoolUnit !== schoolUnitFilter)
+      if (schoolUnitFilter !== 'all' && req.unit !== schoolUnitFilter)
         return false;
       if (!q) return true;
       return (
         req.code.toLowerCase().includes(q) ||
         req.title.toLowerCase().includes(q) ||
-        req.schoolUnit.toLowerCase().includes(q) ||
+        req.unit.toLowerCase().includes(q) ||
         req.unit.toLowerCase().includes(q) ||
         req.requesterName.toLowerCase().includes(q)
       );
@@ -323,13 +319,13 @@ export function DashboardRequestsView({
             <select
               value={schoolUnitFilter}
               onChange={(e) =>
-                setSchoolUnitFilter(e.target.value as 'all' | SchoolUnit)
+                setSchoolUnitFilter(e.target.value)
               }
               aria-label="Filter unit yang mengajukan"
               className="rounded-[8px] border border-[#BEC9C6] bg-[#FFFFFF] px-3 py-2 font-body text-[13px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
             >
               <option value="all">Semua Unit Sekolah</option>
-              {SCHOOL_UNITS.map((u) => (
+              {REQUEST_UNITS.map((u) => (
                 <option key={u} value={u}>
                   {u}
                 </option>
@@ -439,7 +435,7 @@ export function DashboardRequestsView({
                       </td>
                       <td className="px-4 py-3.5">
                         <p className="font-body text-[13px] font-medium text-[#191C1B]">
-                          {req.schoolUnit}
+                          {req.unit}
                         </p>
                         <p className="font-body text-[12px] text-[#3F4947]">
                           {req.unit} · {req.budgetCategoryName}
@@ -517,7 +513,7 @@ export function DashboardRequestsView({
                     </div>
                     <p className="font-title text-[16px] font-semibold text-[#191C1B]">{req.title}</p>
                     <div className="flex items-center justify-between gap-2 border-t border-[#BEC9C6] pt-2">
-                      <span className="font-label text-[12px] text-[#3F4947] truncate">{req.schoolUnit} · {req.budgetCategoryName}</span>
+                      <span className="font-label text-[12px] text-[#3F4947] truncate">{req.unit} · {req.budgetCategoryName}</span>
                       <span className="font-label text-[14px] font-semibold text-[#00433C] tabular-nums shrink-0">{formatRupiah(total)}</span>
                     </div>
                   </button>
@@ -651,8 +647,8 @@ export function DashboardRequestsView({
                 </label>
                 <select
                   id="req-school-unit"
-                  value={schoolUnit}
-                  onChange={(e) => setSchoolUnit(e.target.value as SchoolUnit)}
+                  value={unit}
+                  onChange={(e) => { setUnit(e.target.value); setSchoolUnit(e.target.value); }}
                   className="w-full rounded-[8px] border border-[#BEC9C6] bg-[#FFFFFF] px-3 py-2 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
                 >
                   {SCHOOL_UNITS.map((u) => (
@@ -689,15 +685,16 @@ export function DashboardRequestsView({
                   htmlFor="req-unit"
                   className="font-label text-[13px] font-semibold text-[#191C1B]"
                 >
-                  Bagian / Divisi Pengaju
+                  Unit Pengaju
                 </label>
-                <input
+                <select
                   id="req-unit"
-                  type="text"
                   value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  className="w-full rounded-[8px] border border-[#BEC9C6] px-3 py-2 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
-                />
+                  onChange={(e) => { setUnit(e.target.value); setSchoolUnit(e.target.value); }}
+                  className="w-full rounded-[8px] border border-[#BEC9C6] bg-white px-3 py-2 text-[14px] text-[#191C1B] focus:border-[#00433C] focus:outline-none focus:ring-1 focus:ring-[#00433C]"
+                >
+                  {REQUEST_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
               </div>
 
               <div className="flex flex-col gap-1">
