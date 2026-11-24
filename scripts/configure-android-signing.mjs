@@ -7,8 +7,7 @@ if (!fs.existsSync(gradlePath)) {
 }
 
 let gradle = fs.readFileSync(gradlePath, 'utf8');
-const required = ['ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD'];
-for (const key of required) {
+for (const key of ['ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD']) {
   if (!process.env[key]) throw new Error(`Secret ${key} belum tersedia.`);
 }
 
@@ -26,16 +25,19 @@ const signingBlock = `
 if (!gradle.includes('signingConfigs {')) {
   gradle = gradle.replace(/\n\s*buildTypes\s*\{/, `\n${signingBlock}\n    buildTypes {`);
 }
-gradle = gradle.replace(/release\s*\{([\s\S]*?)\n\s*\}/, (block) => {
-  if (block.includes('signingConfig')) return block;
-  return block.replace(/release\s*\{/, 'release {\n            signingConfig signingConfigs.release');
-});
+
+const buildTypesIndex = gradle.indexOf('buildTypes {');
+if (buildTypesIndex < 0) throw new Error('Blok buildTypes tidak ditemukan di build.gradle.');
+const beforeBuildTypes = gradle.slice(0, buildTypesIndex);
+let buildTypes = gradle.slice(buildTypesIndex);
+buildTypes = buildTypes.replace(/release\s*\{/, (match) => match + '\n            signingConfig signingConfigs.release');
 
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const [major, minor, patch] = pkg.version.split('.').map(Number);
 const versionCode = major * 10000 + minor * 100 + patch;
-gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`);
-gradle = gradle.replace(/versionName\s+["'][^"']+["']/, `versionName "${pkg.version}"`);
+let result = beforeBuildTypes + buildTypes;
+result = result.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`);
+result = result.replace(/versionName\s+["'][^"']+["']/, `versionName "${pkg.version}"`);
 
-fs.writeFileSync(gradlePath, gradle);
+fs.writeFileSync(gradlePath, result);
 console.log(`Android release signing configured for version ${pkg.version} (code ${versionCode}).`);
