@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { CheckCircle2, RefreshCw, X } from 'lucide-react';
 import {
-  BudgetView,
   HistoryView,
   ProfileView,
 } from './components/BudgetAndHistoryViews';
@@ -119,7 +118,7 @@ export default function App() {
     // Simpan halaman terakhir agar tetap sama bila Android membuang WebView di latar belakang.
     try {
       const saved = sessionStorage.getItem('sit_qudwah_active_tab');
-      const validTabs: AppNavTab[] = ['pengajuan', 'persetujuan', 'anggaran', 'riwayat', 'profil', 'detail'];
+      const validTabs: AppNavTab[] = ['pengajuan', 'persetujuan', 'riwayat', 'profil', 'detail'];
       if (saved && validTabs.includes(saved as AppNavTab)) return saved as AppNavTab;
     } catch { /* gunakan halaman awal */ }
     return currentRole === 'guru'
@@ -1215,9 +1214,6 @@ export default function App() {
             </div>
           ))}
 
-        {activeTab === 'anggaran' && (
-          <BudgetView budgetLines={budgetLines} requests={requests} currentUser={currentUser} onAddBudgetLine={handleAddBudgetLine} onUpdateBudgetLine={handleUpdateBudgetLine} onDeleteBudgetLine={handleDeleteBudgetLine} />
-        )}
 
         {activeTab === 'riwayat' && (
           <HistoryView
