@@ -980,6 +980,20 @@ export default function App() {
     return { ok: true };
   };
 
+  const handleEditRequestUnit = async (oldName: string, newName: string): Promise<{ ok: boolean; error?: string }> => {
+    if (currentUser.role !== 'direktur') return { ok: false, error: 'Hanya Direktur yang dapat mengelola Unit Pengaju.' };
+    const cleanName = newName.trim();
+    if (!cleanName) return { ok: false, error: 'Nama unit wajib diisi.' };
+    if (cleanName === oldName) return { ok: true };
+    if (requestUnits.some((unit) => unit.toLowerCase() === cleanName.toLowerCase())) return { ok: false, error: 'Nama unit sudah digunakan.' };
+    if (!supabase) return { ok: false, error: 'Koneksi database tidak tersedia.' };
+    const { error } = await supabase.from('request_units').update({ name: cleanName }).eq('name', oldName);
+    if (error) return { ok: false, error: error.message };
+    setRequestUnits((prev) => prev.map((unit) => unit === oldName ? cleanName : unit).sort((a, b) => a.localeCompare(b, 'id')));
+    setToastMessage('Nama Unit Pengaju berhasil diperbarui. Riwayat pengajuan lama tidak diubah.');
+    return { ok: true };
+  };
+
   const handleDeactivateRequestUnit = async (name: string): Promise<{ ok: boolean; error?: string }> => {
     if (currentUser.role !== 'direktur') return { ok: false, error: 'Hanya Direktur yang dapat mengelola Unit Pengaju.' };
     if (requestUnits.length <= 1) return { ok: false, error: 'Minimal harus tersedia satu Unit Pengaju.' };
@@ -1149,6 +1163,7 @@ export default function App() {
             budgetLines={budgetLines}
             requestUnits={requestUnits}
             onAddRequestUnit={handleAddRequestUnit}
+            onEditRequestUnit={handleEditRequestUnit}
             onDeactivateRequestUnit={handleDeactivateRequestUnit}
             currentUser={currentUser}
             onOpenDetail={handleOpenDetail}
