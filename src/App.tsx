@@ -530,22 +530,35 @@ export default function App() {
     setToastMessage(`Akun ${target.name} telah dihapus.`);
   };
 
-  const handleDeleteRequest = (requestId: string) => {
+  const handleDeleteRequest = async (requestId: string) => {
+    if (currentUser.role !== 'direktur') {
+      setToastMessage('Hanya Direktur yang dapat menghapus riwayat pengajuan dana.');
+      return;
+    }
     const targetRequest = requests.find((req) => req.id === requestId);
-    if (!targetRequest || targetRequest.requesterName !== currentUser.name) {
-      setToastMessage('Anda hanya dapat menghapus pengajuan milik sendiri.');
+    if (!targetRequest) {
+      setToastMessage('Pengajuan tidak ditemukan.');
       return;
     }
-    if (targetRequest.status === 'disetujui') {
-      setToastMessage('Pengajuan yang sudah disetujui tidak dapat dihapus.');
+    if (!supabase) {
+      setToastMessage('Koneksi database tidak tersedia.');
       return;
     }
+
+    const { error } = await supabase.rpc('delete_fund_request', {
+      p_request_id: requestId,
+    });
+    if (error) {
+      setToastMessage(`Pengajuan gagal dihapus: ${error.message}`);
+      return;
+    }
+
     setRequests((prev) => prev.filter((req) => req.id !== requestId));
     if (selectedRequestId === requestId) {
       setSelectedRequestId('');
-      setActiveTab('pengajuan');
+      setActiveTab('riwayat');
     }
-    setToastMessage(`Pengajuan "${targetRequest.title}" berhasil dihapus.`);
+    setToastMessage(`Riwayat pengajuan "${targetRequest.title}" berhasil dihapus.`);
   };
 
   const handleDeleteHistoryRequest = async (requestId: string) => {
