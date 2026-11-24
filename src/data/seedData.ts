@@ -9,9 +9,13 @@ import {
   UserProfile,
 } from '../types/kassekolah';
 
-export const SCHOOL_UNITS: SchoolUnit[] = [
-  'SD IT Qudwah Sungai Rengit',
-  'KB Islam Terpadu Qudwah',
+export const REQUEST_UNITS: string[] = [
+  'Dapur',
+  'Wakil Kurikulum',
+  'Wakil Kesiswaan',
+  'Wakil Sarpras',
+  'Wakil Humas',
+  'Kelas',
 ];
 
 export const SIT_QUDWAH_LOGO_URL = `${import.meta.env.BASE_URL}logo-sit-qudwah.svg?v=20261123`;
@@ -252,7 +256,7 @@ export function generateRequestCode(
       if (!Number.isNaN(parsed) && parsed > max) return parsed;
     }
     return max;
-  }, existingRequests.length);
+  }, 1);
 
   const nextSeq = String(maxSeq + 1).padStart(3, '0');
   const romanMonth = ROMAN_MONTHS[date.getMonth()] || 'I';
