@@ -1,24 +1,24 @@
 {
-  "id": "/sistem-pengajuan-dana/",
+  "id": "/",
   "name": "Sistem Pengajuan Dana SIT Qudwah",
   "short_name": "Pengajuan Dana",
   "description": "Aplikasi pengajuan dana dan persetujuan berjenjang SIT Qudwah Sungai Rengit.",
   "lang": "id-ID",
-  "start_url": "/sistem-pengajuan-dana/",
-  "scope": "/sistem-pengajuan-dana/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#F8FAF8",
   "theme_color": "#00433C",
   "icons": [
     {
-      "src": "/sistem-pengajuan-dana/logo-sit-qudwah.png?v=20261123",
+      "src": "/logo-sit-qudwah.png?v=20261123",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/sistem-pengajuan-dana/logo-sit-qudwah.png?v=20261123",
+      "src": "/logo-sit-qudwah.png?v=20261123",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
