@@ -6,8 +6,8 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    // Custom domain is served from the domain root. Capacitor also loads this hosted site.
-    base: '/',
+    // Use relative asset paths inside the Android APK; use domain-root paths on the website.
+    base: process.env.CAPACITOR_BUILD === 'true' ? './' : '/',
     plugins: [
       react(),
       tailwindcss(),
