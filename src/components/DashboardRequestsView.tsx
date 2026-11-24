@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   ChevronRight,
   Plus,
+  Pencil,
   Search,
   Trash2,
   X,
@@ -27,6 +28,7 @@ interface DashboardRequestsViewProps {
   budgetLines: BudgetLine[];
   requestUnits: string[];
   onAddRequestUnit: (name: string) => Promise<{ ok: boolean; error?: string }>;
+  onEditRequestUnit: (oldName: string, newName: string) => Promise<{ ok: boolean; error?: string }>;
   onDeactivateRequestUnit: (name: string) => Promise<{ ok: boolean; error?: string }>;
   currentUser: UserProfile;
   onOpenDetail: (requestId: string) => void;
@@ -48,6 +50,7 @@ export function DashboardRequestsView({
   budgetLines,
   requestUnits,
   onAddRequestUnit,
+  onEditRequestUnit,
   onDeactivateRequestUnit,
   currentUser,
   onOpenDetail,
@@ -259,6 +262,12 @@ export function DashboardRequestsView({
               {requestUnits.map((unitName) => (
                 <span key={unitName} className="inline-flex items-center gap-2 rounded-full bg-[#E8F2EF] px-3 py-1.5 text-[12px] font-medium text-[#00433C]">
                   {unitName}
+                  <button type="button" aria-label={`Edit ${unitName}`} title="Edit nama unit" onClick={async () => {
+                    const newName = window.prompt('Ubah nama Unit Pengaju:', unitName);
+                    if (newName === null || newName.trim() === unitName) return;
+                    const result = await onEditRequestUnit(unitName, newName);
+                    if (!result.ok) window.alert(result.error || 'Nama unit gagal diubah.');
+                  }} className="inline-flex items-center justify-center rounded p-1 hover:bg-white"><Pencil className="w-3.5 h-3.5" aria-hidden="true" /></button>
                   <button type="button" aria-label={`Nonaktifkan ${unitName}`} onClick={async () => {
                     if (window.confirm(`Nonaktifkan unit "${unitName}"? Riwayat lama tetap ada.`)) {
                       const result = await onDeactivateRequestUnit(unitName);
