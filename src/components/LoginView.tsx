@@ -3,6 +3,7 @@ import { Eye, EyeOff, Info, X } from 'lucide-react';
 import { RoleId, UserAccount } from '../types/kassekolah';
 import { SchoolLogo } from './SchoolLogo';
 import { supabase } from '../lib/supabase';
+import { APP_VERSION } from '../version';
 
 interface LoginViewProps {
   accounts: UserAccount[];
@@ -497,6 +498,9 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
         <footer className="text-center pb-2">
           <p className="font-label text-[12px] leading-[16px] tracking-[0.2px] font-medium text-[#3F4947]">
             Beriman · Berakhlak · Berilmu
+          </p>
+          <p className="font-label text-[11px] leading-[16px] text-[#66716E] tabular-nums mt-1">
+            Versi {APP_VERSION}
           </p>
         </footer>
       </main>
