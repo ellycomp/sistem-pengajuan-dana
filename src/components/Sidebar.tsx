@@ -3,7 +3,6 @@ import {
   Home,
   LayoutDashboard,
   LogOut,
-  PieChart,
   ReceiptText,
   User,
 } from 'lucide-react';
@@ -74,17 +73,6 @@ export function DesktopSidebar({
               className="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-[#00433C] text-[#FFFFFF] font-label text-[12px] leading-[16px] font-medium tabular-nums"
             >
               {pendingApprovalCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSelectTab('anggaran')}
-            className={navBtnClass(activeTab === 'anggaran')}
-          >
-            <span className="flex items-center gap-2.5">
-              <PieChart className="w-5 h-5 shrink-0" aria-hidden="true" />
-              <span>Pos Anggaran</span>
             </span>
           </button>
 
