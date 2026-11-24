@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-apk:
@@ -49,6 +49,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+
+
+      - name: Read application version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build web assets for Android
         run: |
@@ -95,6 +102,18 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
+
+
+      - name: Publish signed APK as GitHub Release
+        if: steps.signing.outputs.has_signing == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          gh release create "v$APP_VERSION" android/app/build/outputs/apk/release/app-release.apk \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "Pengajuan Dana SIT Qudwah v$APP_VERSION" \
+            --notes "Pembaruan aplikasi Pengajuan Dana SIT Qudwah versi $APP_VERSION."
 
       - name: Upload signed release APK
         if: steps.signing.outputs.has_signing == 'true'
