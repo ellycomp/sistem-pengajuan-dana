@@ -548,6 +548,35 @@ export default function App() {
     setToastMessage(`Pengajuan "${targetRequest.title}" berhasil dihapus.`);
   };
 
+  const handleDeleteHistoryRequest = async (requestId: string) => {
+    if (currentUser.role !== 'direktur') {
+      setToastMessage('Hanya Direktur yang dapat menghapus riwayat pengajuan dana.');
+      return;
+    }
+    if (!supabase) {
+      setToastMessage('Koneksi server belum tersedia. Riwayat tidak dihapus.');
+      return;
+    }
+    const target = requests.find((req) => req.id === requestId);
+    if (!target) {
+      setToastMessage('Riwayat pengajuan tidak ditemukan.');
+      return;
+    }
+    const { error } = await supabase.rpc('delete_fund_request', {
+      p_request_id: requestId,
+    });
+    if (error) {
+      setToastMessage(`Gagal menghapus riwayat: ${error.message}`);
+      return;
+    }
+    setRequests((prev) => prev.filter((req) => req.id !== requestId));
+    if (selectedRequestId === requestId) {
+      setSelectedRequestId('');
+      if (activeTab === 'detail') setActiveTab('riwayat');
+    }
+    setToastMessage(`Riwayat pengajuan "${target.title}" berhasil dihapus.`);
+  };
+
   const handleOpenDetail = (requestId: string) => {
     setSelectedRequestId(requestId);
     setActiveTab('detail');
@@ -1120,7 +1149,9 @@ export default function App() {
         {activeTab === 'riwayat' && (
           <HistoryView
             requests={requests}
+            currentRole={currentUser.role}
             onOpenDetail={handleOpenDetail}
+            onDeleteRequest={handleDeleteHistoryRequest}
           />
         )}
 
