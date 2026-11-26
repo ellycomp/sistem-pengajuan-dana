@@ -199,9 +199,9 @@ begin
 
   update public.approval_stages set
     state = case
-      when step = 1 then 'done'
-      when step between 2 and 5 and role_key = v_profile.role then 'done'
-      else 'pending' end,
+      when step = 1 then 'done'::public.stage_state
+      when step between 2 and 5 and role_key = v_profile.role then 'done'::public.stage_state
+      else 'pending'::public.stage_state end,
     note = case
       when step = 1 then note
       when step between 2 and 5 and role_key = v_profile.role then 'Dilewati karena pengaju memegang jabatan pemeriksa'
