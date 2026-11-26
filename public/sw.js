@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sit-qudwah-pwa-v14';
+const CACHE_NAME = 'sit-qudwah-pwa-v15';
 const APP_ROOT = '/';
 const APP_SHELL = [APP_ROOT, APP_ROOT + 'manifest.webmanifest', APP_ROOT + 'pwa-icon.svg'];
 const BRAND_ASSETS = [
