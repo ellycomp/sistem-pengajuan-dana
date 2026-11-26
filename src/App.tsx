@@ -846,15 +846,16 @@ export default function App() {
     const shortDate = timestamp.split(',')[0];
     const budget = budgetLines.find((b) => b.id === payload.budgetCategoryId);
 
-    const findOtherReviewer = (role: RoleId) =>
-      accounts.find((account) => account.role === role && account.id !== currentUser.id);
-    // Each approval step must be assigned to a real account with that step's
-    // role. If the requester occupies that role, a second account of the same
-    // role is required so nobody can approve their own request.
-    const stageTwoReviewer = findOtherReviewer('sarana');
-    const stageThreeReviewer = findOtherReviewer('bendahara-sekolah');
-    const bendUmumAcc = findOtherReviewer('bendahara-umum');
-    const direkturAcc = findOtherReviewer('direktur');
+    // Jika pengaju juga pemegang jabatan pemeriksa pada suatu jenjang,
+    // jenjang tersebut otomatis dilewati agar tidak memeriksa pengajuannya sendiri.
+    const findReviewer = (role: RoleId) =>
+      currentUser.role === role
+        ? currentUser
+        : accounts.find((account) => account.role === role);
+    const stageTwoReviewer = findReviewer('sarana');
+    const stageThreeReviewer = findReviewer('bendahara-sekolah');
+    const bendUmumAcc = findReviewer('bendahara-umum');
+    const direkturAcc = findReviewer('direktur');
     const missingReviewer = [
       !stageTwoReviewer && 'Kepala Seksi Sarana',
       !stageThreeReviewer && 'Bendahara Sekolah',
@@ -863,10 +864,16 @@ export default function App() {
     ].filter(Boolean);
     if (missingReviewer.length) {
       setToastMessage(
-        `Pengajuan belum dapat dikirim. Akun pemeriksa aktif belum tersedia untuk: ${missingReviewer.join(', ')}. Jika pengaju merangkap jabatan tersebut, buat akun petugas pengganti dengan jabatan yang sama terlebih dahulu.`
+        `Pengajuan belum dapat dikirim. Akun pemeriksa belum tersedia untuk: ${missingReviewer.join(', ')}. Minta Direktur membuat akun petugas terlebih dahulu.`
       );
       return;
     }
+    const firstActiveStep = [
+      { step: 2, role: 'sarana' as RoleId },
+      { step: 3, role: 'bendahara-sekolah' as RoleId },
+      { step: 4, role: 'bendahara-umum' as RoleId },
+      { step: 5, role: 'direktur' as RoleId },
+    ].find((stage) => stage.role !== currentUser.role)?.step ?? 6;
 
     const newReq: FundRequest = {
       id: `req-${Date.now()}`,
@@ -882,7 +889,7 @@ export default function App() {
       targetDate: payload.targetDate,
       attachmentName: payload.attachmentName,
       status: 'diproses',
-      currentStageStep: 2,
+      currentStageStep: firstActiveStep,
       items: payload.items.map((item, idx) => ({
         ...item,
         id: `item-${Date.now()}-${idx}`,
@@ -903,8 +910,9 @@ export default function App() {
           roleLabel: '2. Kepala Seksi Sarana',
           personName: stageTwoReviewer!.name,
           personTitle: stageTwoReviewer!.title || 'Kepala Seksi Sarana',
-          state: 'active',
-          note: 'Sedang memverifikasi stok & kebutuhan unit',
+          state: currentUser.role === 'sarana' ? 'done' : (firstActiveStep === 2 ? 'active' : 'pending'),
+          note: currentUser.role === 'sarana' ? 'Dilewati karena pengaju adalah Kepala Seksi Sarana' : (firstActiveStep === 2 ? 'Sedang memverifikasi stok & kebutuhan unit' : 'Menunggu pemeriksaan tahap sebelumnya'),
+          timestamp: currentUser.role === 'sarana' ? 'Dilewati otomatis' : undefined,
         },
         {
           step: 3,
@@ -912,8 +920,9 @@ export default function App() {
           roleLabel: '3. Bendahara Sekolah',
           personName: stageThreeReviewer!.name,
           personTitle: stageThreeReviewer!.title || 'Bendahara Sekolah',
-          state: 'pending',
-          note: 'Menunggu persetujuan Kasi Sarana',
+          state: currentUser.role === 'bendahara-sekolah' ? 'done' : (firstActiveStep === 3 ? 'active' : 'pending'),
+          note: currentUser.role === 'bendahara-sekolah' ? 'Dilewati karena pengaju adalah Bendahara Sekolah' : (firstActiveStep === 3 ? 'Sedang diperiksa Bendahara Sekolah' : 'Menunggu pemeriksaan tahap sebelumnya'),
+          timestamp: currentUser.role === 'bendahara-sekolah' ? 'Dilewati otomatis' : undefined,
         },
         {
           step: 4,
@@ -921,8 +930,9 @@ export default function App() {
           roleLabel: '4. Bendahara Umum',
           personName: bendUmumAcc!.name,
           personTitle: bendUmumAcc!.title || 'Bendahara Umum',
-          state: 'pending',
-          note: 'Menunggu penerusan dari Bendahara Sekolah',
+          state: currentUser.role === 'bendahara-umum' ? 'done' : (firstActiveStep === 4 ? 'active' : 'pending'),
+          note: currentUser.role === 'bendahara-umum' ? 'Dilewati karena pengaju adalah Bendahara Umum' : (firstActiveStep === 4 ? 'Sedang diperiksa Bendahara Umum' : 'Menunggu pemeriksaan tahap sebelumnya'),
+          timestamp: currentUser.role === 'bendahara-umum' ? 'Dilewati otomatis' : undefined,
         },
         {
           step: 5,
@@ -930,8 +940,9 @@ export default function App() {
           roleLabel: '5. Direktur SIT Qudwah Sungai Rengit',
           personName: direkturAcc!.name,
           personTitle: direkturAcc!.title || 'Direktur SIT Qudwah',
-          state: 'pending',
-          note: 'Persetujuan akhir & otorisasi pencairan dana',
+          state: currentUser.role === 'direktur' ? 'done' : (firstActiveStep === 5 ? 'active' : 'pending'),
+          note: currentUser.role === 'direktur' ? 'Dilewati karena pengaju adalah Direktur' : 'Persetujuan akhir & otorisasi pencairan dana',
+          timestamp: currentUser.role === 'direktur' ? 'Dilewati otomatis' : undefined,
         },
       ],
     };
@@ -963,7 +974,10 @@ export default function App() {
     setRequests((prev) => [newReq, ...prev]);
     setSelectedRequestId(newReq.id);
     setActiveTab('detail');
-    setToastMessage(`Pengajuan ${code} berhasil dikirim ke ${stageTwoReviewer!.name} (Kepala Seksi Sarana).`);
+    const firstReviewer = newReq.stages.find((stage) => stage.step === firstActiveStep);
+    setToastMessage(firstReviewer
+      ? `Pengajuan ${code} berhasil dikirim ke ${firstReviewer.personName}.`
+      : `Pengajuan ${code} berhasil disimpan.`);
   };
 
   const handleAddRequestUnit = async (name: string): Promise<{ ok: boolean; error?: string }> => {
