@@ -631,8 +631,9 @@ export default function App() {
         requestAmount = calculateRequestTotal(req.items);
 
         const currentStep = req.currentStageStep;
-        const nextStep = (currentStep + 1) as 1 | 2 | 3 | 4 | 5 | 6;
-        completedFully = currentStep >= 5;
+        const nextPendingStage = req.stages.find((stage) => stage.step > currentStep && stage.state === 'pending');
+        const nextStep = (nextPendingStage?.step ?? 6) as 1 | 2 | 3 | 4 | 5 | 6;
+        completedFully = !nextPendingStage;
 
         const updatedStages = req.stages.map((stage) => {
           if (stage.step === currentStep) {
@@ -787,6 +788,12 @@ export default function App() {
     });
     if (resubmitError) { setToastMessage(`Gagal mengajukan ulang: ${resubmitError.message}`); return; }
     let title = '';
+    const skippedRole = currentUser.role;
+    const roleStep: Partial<Record<RoleId, number>> = {
+      sarana: 2, 'bendahara-sekolah': 3, 'bendahara-umum': 4, direktur: 5,
+    };
+    const skippedStep = roleStep[skippedRole];
+    const firstResubmitStep = [2, 3, 4, 5].find((step) => step !== skippedStep) ?? 6;
 
     setRequests((prev) =>
       prev.map((req) => {
@@ -794,31 +801,21 @@ export default function App() {
         title = req.title;
         const updatedStages = req.stages.map((stage) => {
           if (stage.step === 1) {
-            return {
-              ...stage,
-              state: 'done' as const,
-              timestamp: `Diajukan ulang · ${timestamp}`,
-            };
+            return { ...stage, state: 'done' as const, timestamp: `Diajukan ulang · ${timestamp}` };
           }
-          if (stage.step === 2) {
-            return {
-              ...stage,
-              state: 'active' as const,
-              note: 'Menunggu pemeriksaan ulang Kepala Seksi Sarana',
-              timestamp: undefined,
-            };
+          if (stage.step === skippedStep) {
+            return { ...stage, state: 'done' as const, note: 'Dilewati karena pengaju memegang jabatan pemeriksa', timestamp: 'Dilewati otomatis' };
           }
-          return {
-            ...stage,
-            state: 'pending' as const,
-            timestamp: undefined,
-          };
+          if (stage.step === firstResubmitStep) {
+            return { ...stage, state: 'active' as const, note: 'Pengajuan ulang menunggu pemeriksaan petugas tahap ini', timestamp: undefined };
+          }
+          return { ...stage, state: 'pending' as const, timestamp: undefined };
         });
 
         return {
           ...req,
           status: 'diproses',
-          currentStageStep: 2,
+          currentStageStep: firstResubmitStep as 2 | 3 | 4 | 5 | 6,
           revisionNote: undefined,
           revisionBy: undefined,
           stages: updatedStages,
@@ -826,9 +823,7 @@ export default function App() {
       })
     );
 
-    setToastMessage(
-      `Pengajuan "${title}" berhasil diajukan ulang ke Kasi Sarana.`
-    );
+    setToastMessage(`Pengajuan "${title}" berhasil diajukan ulang ke tahap pemeriksaan berikutnya.`);
   };
 
   const handleCreateRequest = async (payload: {
