@@ -364,6 +364,7 @@ export function LoginView({ accounts, onLogin }: LoginViewProps) {
                 <span>{loginBusy ? 'Memeriksa akun...' : 'Masuk ke Portal'}</span>
               </button>
             </form>
+            <AndroidUpdateChecker />
           </div>
         </section>
       </main>
