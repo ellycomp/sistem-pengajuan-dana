@@ -52,7 +52,7 @@ export function AndroidUpdateChecker() {
         if (!('serviceWorker' in navigator)) {
           throw new Error('Safari belum mendukung layanan pembaruan aplikasi ini.');
         }
-        const registration = await navigator.serviceWorker.getRegistration('/');
+        const registration = await navigator.serviceWorker.getRegistration();
         if (!registration) {
           throw new Error('Layanan PWA belum aktif. Buka aplikasi melalui Safari dan coba lagi.');
         }
