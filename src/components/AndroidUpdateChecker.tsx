@@ -34,14 +34,52 @@ function toBase64(buffer: ArrayBuffer): string {
 }
 
 export function AndroidUpdateChecker() {
+  const platform = Capacitor.getPlatform();
+  const isAndroid = platform === 'android';
+  const isIOSPwa = platform === 'web' &&
+    (/iPhone|iPad|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
   const [release, setRelease] = useState<ReleaseInfo | null>(null);
-  const [checking, setChecking] = useState(true);
+  const [checking, setChecking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
   const checkUpdate = async () => {
     setChecking(true);
     setMessage('');
+    if (isIOSPwa) {
+      try {
+        if (!('serviceWorker' in navigator)) {
+          throw new Error('Safari belum mendukung layanan pembaruan aplikasi ini.');
+        }
+        const registration = await navigator.serviceWorker.getRegistration('/');
+        if (!registration) {
+          throw new Error('Layanan PWA belum aktif. Buka aplikasi melalui Safari dan coba lagi.');
+        }
+        const hadController = Boolean(navigator.serviceWorker.controller);
+        let controllerChanged = false;
+        const onControllerChange = () => { controllerChanged = true; };
+        navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+        await registration.update();
+        await new Promise((resolve) => window.setTimeout(resolve, 1200));
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+        if (controllerChanged || (hadController && registration.active?.state === 'activated')) {
+          setMessage('Pembaruan diperiksa. Memuat ulang aplikasi...');
+          window.setTimeout(() => window.location.reload(), 300);
+        } else {
+          setMessage('Pemeriksaan selesai. Jika versi baru tersedia, Safari akan memuatnya. Versi aplikasi: ' + APP_VERSION + '.');
+        }
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Pemeriksaan pembaruan gagal. Periksa koneksi internet.');
+      } finally {
+        setChecking(false);
+      }
+      return;
+    }
+    if (!isAndroid) {
+      setChecking(false);
+      return;
+    }
     try {
       const response = await fetch(RELEASE_API, {
         headers: { Accept: 'application/vnd.github+json' },
@@ -59,11 +97,10 @@ export function AndroidUpdateChecker() {
   };
 
   useEffect(() => {
-    if (Capacitor.getPlatform() !== 'android') return;
-    void checkUpdate();
+    if (isAndroid) void checkUpdate();
   }, []);
 
-  if (Capacitor.getPlatform() !== 'android') return null;
+  if (!isAndroid && !isIOSPwa) return null;
 
   const installUpdate = async () => {
     const apk = release?.assets?.find((asset) => asset.name.toLowerCase().endsWith('.apk'));
@@ -79,9 +116,8 @@ export function AndroidUpdateChecker() {
       if (!response.ok) throw new Error('Unduhan APK gagal. Silakan coba lagi.');
       const buffer = await response.arrayBuffer();
       if (buffer.byteLength < 100000) throw new Error('Berkas pembaruan tidak lengkap.');
-      const fileName = 'pengajuan-dana-sit-qudwah-update.apk';
       const saved = await Filesystem.writeFile({
-        path: fileName,
+        path: 'pengajuan-dana-sit-qudwah-update.apk',
         data: toBase64(buffer),
         directory: Directory.Cache,
         recursive: true,
@@ -99,13 +135,15 @@ export function AndroidUpdateChecker() {
   return (
     <div className="mt-3 rounded-lg border border-[#BEC9C6] bg-[#F5F8F6] p-3 text-left">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold text-[#00433C]">Pembaruan Aplikasi</p>
+        <p className="text-xs font-semibold text-[#00433C]">{isIOSPwa ? 'Pembaruan PWA iOS' : 'Pembaruan Aplikasi Android'}</p>
         <button type="button" onClick={() => void checkUpdate()} disabled={checking || busy}
           className="text-xs font-semibold text-[#00433C] underline disabled:opacity-50">
-          {checking ? 'Memeriksa...' : 'Periksa lagi'}
+          {checking ? 'Memeriksa...' : isIOSPwa ? 'Periksa Pembaruan' : 'Periksa lagi'}
         </button>
       </div>
-      {release ? (
+      {isIOSPwa ? (
+        <p className="mt-1 text-xs text-[#3F4947]">Versi web terbaru diperiksa melalui Safari. Jika pembaruan tersedia, aplikasi akan memuat ulang. Versi saat ini: {APP_VERSION}.</p>
+      ) : release ? (
         <>
           <p className="mt-1 text-sm font-semibold text-[#191C1B]">Versi {release.tag_name.replace(/^v/i, '')} tersedia</p>
           {release.body && <p className="mt-1 max-h-20 overflow-auto whitespace-pre-line text-xs text-[#3F4947]">{release.body}</p>}
